@@ -1,0 +1,7 @@
+# Only installation inputs belong in the build context, never local credentials.
+**
+!Dockerfile
+!scripts/
+!scripts/install-codex.sh
+!versions/
+!versions/codex.env
