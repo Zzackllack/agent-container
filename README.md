@@ -5,18 +5,29 @@ A containerized development workspace for AI coding agents, intended to run
 repository checkouts, and its own Docker daemon so agents can build images and
 run container-based tests.
 
-**Status:** the initial Debian 13 image includes development utilities and the
-Codex CLI. The internal Docker daemon, Sysbox/Compose setup, and server deployment
-are the next steps; this image currently starts an interactive shell.
+**Status:** the Debian 13 image includes Codex, pinned OpenCode v1, and T3 Code.
+Compose starts T3's web server with persistent storage and a configurable host
+port. The internal Docker daemon, Sysbox runtime setup, and server deployment
+are still pending.
 
 ## Build and use
 
 ```sh
-docker build -t agent-container:dev .
-docker run --rm -it --init \
-  --mount type=volume,source=agent-workspace,target=/workspace \
-  --mount type=volume,source=agent-codex,target=/home/agent/.codex \
-  agent-container:dev
+cp .env.example .env
+docker compose up -d --build --wait
+docker compose exec workspace t3-pair
+```
+
+Open the printed one-time pairing URL in your browser. The default host binding
+is `127.0.0.1:3773`; the container listens on `0.0.0.0:3773` so Docker can forward
+that port. T3's own pairing and device authorization remain enabled. An unpaired
+browser cannot control the workspace just by knowing its address.
+
+The image starts `t3 serve` in the foreground. Compose handles restart and process
+reaping; no systemd service is installed inside the container. To open a shell:
+
+```sh
+docker compose exec workspace bash
 ```
 
 The image uses `debian:trixie-slim` (Debian 13) and supports Linux amd64 and arm64.
@@ -27,10 +38,92 @@ APT is supplied by Debian; install extra packages with `sudo apt-get update` and
 when that container is removed; add lasting tools to the Dockerfile.
 
 The default user is `agent` (UID/GID 1000), with passwordless sudo inside the
-container. `/workspace` holds checkouts, and `/home/agent/.codex` holds Codex
-settings, sessions, and credentials. The named volumes above survive container
-removal and image rebuilds. Bind-mounted directories need compatible ownership
-on Linux; named volumes avoid that setup for this first image.
+container. Compose persists the complete `/home/agent` directory in `agent-home`
+and repository checkouts in `agent-workspace`. This includes Codex credentials,
+OpenCode configuration/data/cache, T3's database, pairing identity, provider
+settings, and T3-managed worktrees. Volume names are scoped to the Compose project.
+They survive container recreation and image rebuilds; `docker compose down -v`
+deletes them. Keep the home volume private and include both volumes in backups.
+
+Bind-mounted directories need compatible ownership on Linux. The previous manual
+`docker run` example's volumes are not automatically imported into these Compose
+volumes.
+
+## OpenCode and T3 Code
+
+- **OpenCode 1.18.35:** native glibc binary; the amd64 build uses the baseline
+  variant for CPUs without AVX2. Automatic OpenCode updates are disabled.
+- **T3 Code 0.0.45:** standalone Linux server runtime with its bundled web UI,
+  terminal support, and resource monitor. No desktop GUI installation or separate
+  Node.js installation is needed.
+
+Versions and architecture-specific SHA-256 hashes live in `versions/opencode.env`
+and `versions/t3.env`. Both installers verify downloads during the image build.
+T3 0.0.45 supports OpenCode v1; the 0.0.46 train changes compatibility in favor
+of OpenCode v2. Keep these pins together when evaluating upgrades.
+
+Authenticate providers in this container, not on the Mac controlling it:
+
+```sh
+docker compose exec workspace opencode auth login
+docker compose exec workspace codex login --device-auth
+```
+
+In T3's web UI, open **Settings → Providers** for this environment and enable
+OpenCode and/or Codex. The installed paths are `/usr/local/bin/opencode` and
+`/usr/local/bin/codex`. Projects use container paths such as `/workspace/my-project`.
+Provider sign-in and a real agent task still need to be verified with your account.
+
+Update tools through their version files and an image rebuild. Do not use T3's
+remote server update button or `opencode upgrade` to change this pinned image.
+Installed tools under `/opt` and `/usr/local/bin` are root-owned; interactive
+clients should not replace them.
+
+## Connect from the Mac, iPhone, or another browser
+
+Direct pairing works when the device can reach the host's published port. On the
+Linux server, set `T3_BIND_ADDRESS` in `.env` to its actual **NetBird IP**, and set
+`T3_PUBLIC_URL` to `http://<server-NetBird-IP>:3773` (adjust the port if needed).
+Then recreate the service and mint a fresh link:
+
+```sh
+docker compose up -d --wait
+docker compose exec workspace t3-pair
+# Or override the advertised origin for this link:
+# Replace this example address with the server's actual NetBird IP.
+docker compose exec workspace t3-pair http://100.100.100.42:3773
+```
+
+`t3-pair` uses T3 to mint a five-minute, one-time grant and replaces the container's
+internal address with the advertised origin. Use a separate fresh URL per device.
+Paste it into **Settings → Connections → Add environment** on the Mac, or
+**Settings → Environments** on iPhone. A paired browser uses the same environment.
+NetBird must be connected on the client and allow traffic to the server's port.
+Pairing links are credentials; do not share them in issues or screenshots.
+
+Your Mac currently uses the 0.0.46 nightly train, while this server is pinned to
+stable 0.0.45. Native client compatibility across those releases is not yet
+verified. If an app requests a server upgrade or rejects the version, use a
+compatible stable client or deliberately upgrade the image and recheck OpenCode
+compatibility. The container's own web UI matches its server version.
+
+T3 Connect is an alternative to direct private-network access:
+
+```sh
+docker compose exec workspace t3 connect
+# Complete the browser/code sign-in. Decline background service installation;
+# Compose already owns the server process.
+docker compose restart workspace
+```
+
+Sign in to the same T3 Connect account on the Mac/iPhone and select the environment.
+This opt-in path contacts T3's service; it is not required for NetBird pairing.
+The hosted `app.t3.codes` frontend requires an HTTPS backend. For a private HTTP
+NetBird endpoint, use this container's web UI or direct pairing in the native app.
+For hosted-web access, configure HTTPS with WebSocket forwarding, or use T3 Connect.
+
+See [T3 remote access](https://github.com/pingdotgg/t3code/blob/v0.0.45/docs/user/remote-access.md)
+for the supported connection and authorization flows.
 
 ### Codex CLI
 
@@ -46,7 +139,8 @@ Inside the container:
 ```sh
 codex login --device-auth
 # Open the printed link on your Mac and enter the one-time code.
-git clone <repository-url> /workspace/my-project
+# Replace the URL with your repository.
+git clone https://github.com/you/your-repo.git /workspace/my-project
 cd /workspace/my-project
 codex
 ```
@@ -56,9 +150,9 @@ or allowed by your workspace administrator. This login flow does not require
 publishing an OAuth callback port. See the [official authentication guide](https://learn.chatgpt.com/docs/auth)
 for other login methods.
 
-Treat the `agent-codex` volume as credential storage. Login happens at runtime;
-no credentials are included in the image or build context. This first image
-provides Codex's terminal interface; it does not include a graphical frontend.
+Codex state is stored under `/home/agent/.codex` in the home volume. Login happens
+at runtime; no credentials are included in the image or build context. T3 provides
+the web interface for the installed CLIs; the Codex desktop app is not included.
 
 The container boundary and Codex's own command sandbox are separate. This image
 does not configure a Codex sandbox bypass. Whether its Linux sandbox works under
@@ -66,10 +160,19 @@ the eventual Sysbox runtime needs testing on the selected server.
 
 ### Verification so far
 
-Both images build locally: arm64 natively, amd64 under Docker Desktop emulation.
-Smoke checks on both cover CLI startup/help/completions, Git commits, C
-compilation, and sudo. Named-volume ownership and persistence were also checked
-on arm64. These checks do not cover an authenticated Codex task or nested Docker.
+Both images build and run locally: arm64 natively, amd64 under Docker Desktop
+emulation. All three CLI version checks pass, and T3 serves its environment
+descriptor on both architectures. Docker's build checks report no warnings.
+
+On arm64, Compose reaches healthy status, an unpaired browser sees the pairing
+screen, and a one-time link opens the working web UI. T3 detects Codex 0.161.0
+and OpenCode 1.18.35 and loads OpenCode's model catalog. Container recreation
+preserves home/workspace files, the T3 database, and the paired browser session.
+`sh tests/t3-pair.sh` checks address rewriting and rejection of malformed origins.
+
+These checks do not cover authenticated provider tasks, native Mac/iPhone
+connections, T3 Connect, NetBird reachability, or nested Docker. The baseline Git,
+C compilation, and sudo checks passed before this addition.
 
 On the Mac's Docker Desktop with the default runtime, `codex sandbox linux /bin/true`
 fails because bubblewrap cannot create a namespace. The image's CLI installation
@@ -131,8 +234,8 @@ need a separate disk budget; a container memory limit does not limit that storag
 
 1. Select an existing server and check Sysbox compatibility, available resources,
    and the impact of installation on its current services.
-2. Add the internal Docker daemon and Compose configuration, including persistent
-   Docker storage and access through NetBird.
+2. Add the internal Docker daemon and select the Sysbox runtime in Compose,
+   including persistent Docker storage. Configure the selected host's NetBird IP.
 3. Verify Codex command execution, a real repository's image builds, and Compose
    tests inside the Sysbox workspace. Add project-specific runtimes as needed.
 
@@ -144,3 +247,5 @@ need a separate disk budget; a container memory limit does not limit that storag
 - [Sysbox installation and coexistence with Docker](https://github.com/nestybox/sysbox/blob/master/docs/user-guide/install-package.md)
 - [Codex CLI](https://learn.chatgpt.com/docs/codex/cli)
 - [Codex release packages](https://github.com/openai/codex/releases)
+- [OpenCode 1.18.35](https://github.com/anomalyco/opencode/releases/tag/v1.18.35)
+- [T3 Code 0.0.45](https://github.com/pingdotgg/t3code/releases/tag/v0.0.45)

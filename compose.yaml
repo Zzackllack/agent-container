@@ -1,0 +1,23 @@
+services:
+  workspace:
+    build: .
+    image: agent-container:dev
+    init: true
+    restart: unless-stopped
+    ports:
+      - "${T3_BIND_ADDRESS:-127.0.0.1}:${T3_PORT:-3773}:3773"
+    environment:
+      T3_PUBLIC_URL: "${T3_PUBLIC_URL:-http://localhost:3773}"
+    volumes:
+      - agent-home:/home/agent
+      - agent-workspace:/workspace
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:3773/.well-known/t3/environment"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
+
+volumes:
+  agent-home:
+  agent-workspace:

@@ -3,5 +3,10 @@
 !Dockerfile
 !scripts/
 !scripts/install-codex.sh
+!scripts/install-opencode.sh
+!scripts/install-t3.sh
+!scripts/t3-pair.sh
 !versions/
 !versions/codex.env
+!versions/opencode.env
+!versions/t3.env
