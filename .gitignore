@@ -1,0 +1,7 @@
+.DS_Store
+
+# Keep local credentials out of Git while allowing a configuration template.
+.env
+.env.*
+!.env.example
+/secrets/
