@@ -19,8 +19,8 @@ result=$(sh "$repo_dir/scripts/t3-pair.sh" https://agent.example/)
 expected='Pairing URL: https://agent.example/pair#token=test-one-time-grant'
 test "$(printf '%s\n' "$result" | head -1)" = "$expected"
 
-result=$(T3_PUBLIC_URL=http://100.100.100.42:18773 sh "$repo_dir/scripts/t3-pair.sh")
-expected='Pairing URL: http://100.100.100.42:18773/pair#token=test-one-time-grant'
+result=$(T3_PUBLIC_URL=http://agent.example:18773 sh "$repo_dir/scripts/t3-pair.sh")
+expected='Pairing URL: http://agent.example:18773/pair#token=test-one-time-grant'
 test "$(printf '%s\n' "$result" | head -1)" = "$expected"
 
 for invalid in ftp://agent.example http:// http://agent.example/path \

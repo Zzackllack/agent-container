@@ -1,16 +1,20 @@
 # agent-container
 
-A containerized development workspace for AI coding agents, intended to run
-24/7 on an existing Linux server. The workspace will provide development tools,
-repository checkouts, and its own Docker daemon so agents can build images and
-run container-based tests.
+A containerized development workspace for AI coding agents, with Codex CLI,
+OpenCode, and T3 Code's web interface. Run it locally with Docker or keep it
+available on a Linux server, with tools and configuration maintained in one
+rebuildable image.
 
 **Status:** the Debian 13 image includes Codex, pinned OpenCode v1, and T3 Code.
 Compose starts T3's web server with persistent storage and a configurable host
-port. The internal Docker daemon, Sysbox runtime setup, and server deployment
-are still pending.
+port. An internal Docker daemon and Sysbox integration are planned so agents
+can also build images and run container-based tests. They are not implemented yet.
 
 ## Build and use
+
+Requirements: Docker Engine or Docker Desktop with Docker Compose v2 and support
+for Linux containers. The image supports `linux/amd64` and `linux/arm64`.
+Clone this repository and run the following commands from its root:
 
 ```sh
 cp .env.example .env
@@ -45,9 +49,8 @@ settings, and T3-managed worktrees. Volume names are scoped to the Compose proje
 They survive container recreation and image rebuilds; `docker compose down -v`
 deletes them. Keep the home volume private and include both volumes in backups.
 
-Bind-mounted directories need compatible ownership on Linux. The previous manual
-`docker run` example's volumes are not automatically imported into these Compose
-volumes.
+If you replace named volumes with bind mounts, give the `agent` user compatible
+directory ownership on Linux.
 
 ## OpenCode and T3 Code
 
@@ -62,7 +65,7 @@ and `versions/t3.env`. Both installers verify downloads during the image build.
 T3 0.0.45 supports OpenCode v1; the 0.0.46 train changes compatibility in favor
 of OpenCode v2. Keep these pins together when evaluating upgrades.
 
-Authenticate providers in this container, not on the Mac controlling it:
+Configure provider authentication in the workspace environment:
 
 ```sh
 docker compose exec workspace opencode auth login
@@ -72,40 +75,60 @@ docker compose exec workspace codex login --device-auth
 In T3's web UI, open **Settings → Providers** for this environment and enable
 OpenCode and/or Codex. The installed paths are `/usr/local/bin/opencode` and
 `/usr/local/bin/codex`. Projects use container paths such as `/workspace/my-project`.
-Provider sign-in and a real agent task still need to be verified with your account.
+Provider access depends on the account or API credentials you configure. The
+installation checks below do not establish that a provider can run agent tasks.
 
 Update tools through their version files and an image rebuild. Do not use T3's
 remote server update button or `opencode upgrade` to change this pinned image.
 Installed tools under `/opt` and `/usr/local/bin` are root-owned; interactive
 clients should not replace them.
 
-## Connect from the Mac, iPhone, or another browser
+## Remote access
 
-Direct pairing works when the device can reach the host's published port. On the
-Linux server, set `T3_BIND_ADDRESS` in `.env` to its actual **NetBird IP**, and set
-`T3_PUBLIC_URL` to `http://<server-NetBird-IP>:3773` (adjust the port if needed).
-Then recreate the service and mint a fresh link:
+Direct pairing requires the client to reach the host's published port. Choose a
+host interface reachable over your LAN or private VPN, then set `T3_BIND_ADDRESS`
+and `T3_PUBLIC_URL` in `.env`. For example, if the host's LAN address is
+`192.168.1.20`:
+
+```dotenv
+T3_BIND_ADDRESS=192.168.1.20
+T3_PORT=3773
+T3_PUBLIC_URL=http://192.168.1.20:3773
+```
+
+Replace that example address with your host's address. `T3_BIND_ADDRESS` is an IP
+assigned to the Docker host; `T3_PUBLIC_URL` is the origin your client can reach.
+If you change `T3_PORT`, include that port in the advertised URL as well. Recreate
+the service and mint a fresh link:
 
 ```sh
 docker compose up -d --wait
 docker compose exec workspace t3-pair
 # Or override the advertised origin for this link:
-# Replace this example address with the server's actual NetBird IP.
-docker compose exec workspace t3-pair http://100.100.100.42:3773
+docker compose exec workspace t3-pair http://192.168.1.20:3773
 ```
 
 `t3-pair` uses T3 to mint a five-minute, one-time grant and replaces the container's
 internal address with the advertised origin. Use a separate fresh URL per device.
-Paste it into **Settings → Connections → Add environment** on the Mac, or
-**Settings → Environments** on iPhone. A paired browser uses the same environment.
-NetBird must be connected on the client and allow traffic to the server's port.
+Open it in a browser, or paste it into the native client's environment settings
+(**Settings → Connections → Add environment** on macOS;
+**Settings → Environments** on iPhone).
 Pairing links are credentials; do not share them in issues or screenshots.
 
-Your Mac currently uses the 0.0.46 nightly train, while this server is pinned to
-stable 0.0.45. Native client compatibility across those releases is not yet
-verified. If an app requests a server upgrade or rejects the version, use a
-compatible stable client or deliberately upgrade the image and recheck OpenCode
-compatibility. The container's own web UI matches its server version.
+Allow the published port through the host firewall and any network access rules.
+VPN tools such as WireGuard, NetBird, or Tailscale are optional ways to provide
+private reachability; this project does not require a particular VPN.
+
+For HTTPS access, configure a reverse proxy with WebSocket forwarding and set
+`T3_PUBLIC_URL` to its origin, for example `https://agent.example`. The hostname
+must resolve from the client. A reverse proxy and TLS certificates are not
+provided by this repository; keep the upstream port bound to an interface the
+proxy can reach.
+
+Use a native client compatible with the pinned T3 server. If an app requests a
+server upgrade or rejects the version, check the release's client compatibility
+before changing the image, and recheck OpenCode compatibility too. The bundled
+web UI matches its server version.
 
 T3 Connect is an alternative to direct private-network access:
 
@@ -116,16 +139,16 @@ docker compose exec workspace t3 connect
 docker compose restart workspace
 ```
 
-Sign in to the same T3 Connect account on the Mac/iPhone and select the environment.
-This opt-in path contacts T3's service; it is not required for NetBird pairing.
+Sign in to the same T3 Connect account on your clients and select the environment.
+This opt-in path contacts T3's service; it is not required for direct pairing.
 The hosted `app.t3.codes` frontend requires an HTTPS backend. For a private HTTP
-NetBird endpoint, use this container's web UI or direct pairing in the native app.
+endpoint, use this container's web UI or direct pairing in a compatible native app.
 For hosted-web access, configure HTTPS with WebSocket forwarding, or use T3 Connect.
 
 See [T3 remote access](https://github.com/pingdotgg/t3code/blob/v0.0.45/docs/user/remote-access.md)
 for the supported connection and authorization flows.
 
-### Codex CLI
+## Codex CLI
 
 Codex **0.161.0** is installed from the official native Linux package, including
 its helper binaries. Node.js is not required for this installation. The version
@@ -138,7 +161,7 @@ Inside the container:
 
 ```sh
 codex login --device-auth
-# Open the printed link on your Mac and enter the one-time code.
+# Open the printed link in a browser and enter the one-time code.
 # Replace the URL with your repository.
 git clone https://github.com/you/your-repo.git /workspace/my-project
 cd /workspace/my-project
@@ -158,61 +181,55 @@ The container boundary and Codex's own command sandbox are separate. This image
 does not configure a Codex sandbox bypass. Whether its Linux sandbox works under
 the eventual Sysbox runtime needs testing on the selected server.
 
-### Verification so far
+## Recorded validation
 
-Both images build and run locally: arm64 natively, amd64 under Docker Desktop
-emulation. All three CLI version checks pass, and T3 serves its environment
-descriptor on both architectures. Docker's build checks report no warnings.
+Development checks covered arm64 natively and amd64 under Docker Desktop
+emulation. All three CLI version checks passed, and T3 served its environment
+descriptor on both architectures. Docker's build checks reported no warnings.
 
-On arm64, Compose reaches healthy status, an unpaired browser sees the pairing
-screen, and a one-time link opens the working web UI. T3 detects Codex 0.161.0
-and OpenCode 1.18.35 and loads OpenCode's model catalog. Container recreation
-preserves home/workspace files, the T3 database, and the paired browser session.
+On arm64, Compose reached healthy status, an unpaired browser saw the pairing
+screen, and a one-time link opened the working web UI. T3 detected Codex 0.161.0
+and OpenCode 1.18.35 and loaded OpenCode's model catalog. Container recreation
+preserved home/workspace files, the T3 database, and the paired browser session.
 `sh tests/t3-pair.sh` checks address rewriting and rejection of malformed origins.
 
-These checks do not cover authenticated provider tasks, native Mac/iPhone
-connections, T3 Connect, NetBird reachability, or nested Docker. The baseline Git,
-C compilation, and sudo checks passed before this addition.
+These checks do not cover authenticated provider tasks, native client
+connections, T3 Connect, remote network reachability, or nested Docker. Baseline
+Git, C compilation, and sudo checks also passed.
 
-On the Mac's Docker Desktop with the default runtime, `codex sandbox linux /bin/true`
-fails because bubblewrap cannot create a namespace. The image's CLI installation
-works, but that does not establish working sandboxed agent execution. Resolving
-and testing that under Sysbox is part of the server setup.
+On the tested Docker Desktop setup with the default runtime,
+`codex sandbox linux /bin/true` fails because bubblewrap cannot create a namespace.
+The image's CLI installation works, but that does not establish working
+sandboxed agent execution. Resolving and testing that under Sysbox is part of
+the server setup.
 
-## Why we're building it
+## Why this project exists
 
-The projects we work on need more than file edits. Verifying a change can require
+Development workflows need more than file edits. Verifying a change can require
 starting application containers, databases, and entire Docker Compose stacks.
 An agent needs that capability to complete the development workflow.
 
-We want a repeatable environment on infrastructure we already own, without
-buying a dedicated machine or giving the agent control of the server's Docker
-daemon. Keeping the setup in a separate repository makes the tools and
-configuration easier to review, rebuild, and maintain.
+A repeatable workspace can use existing hardware and keep tool installation
+separate from the host's configuration. Pinned downloads, persistent project
+storage, and a bundled web UI make the environment easier to rebuild and access
+from different devices. The planned internal Docker daemon will let agents run
+project containers without controlling the host's Docker daemon.
 
 The focus is development: editing repositories, building software, running
 tests, and inspecting results. Chat bots and general-purpose assistant
 integrations are outside the initial scope.
 
-## What makes this setup different
+## Planned Docker isolation
 
-- **Docker inside the workspace.** The agent uses an internal Docker daemon for
-  project containers, with its own images, networks, build cache, and volumes.
-- **Sysbox for the outer container.** Sysbox is installed on the Linux host and
-  selected for this workspace with `runtime: sysbox-runc`. It enables nested
-  Docker without the conventional privileged outer container or a mount of the
-  host's Docker socket.
-- **An additional runtime, not a server-wide migration.** Existing services can
-  keep their current runtime. Sysbox will be selected explicitly for the agent
-  workspace rather than made the server's default.
-- **Persistent work with a rebuildable environment.** Repository checkouts and
-  inner Docker state will use dedicated storage, separate from the image that
-  supplies development tools.
-- **Remote access through published ports.** Development services and a future
-  agent interface can be reached through explicit port mappings, including
-  bindings to the server's NetBird address.
-- **Choice of agent tools.** The environment should support the tools we choose
-  without tying its Docker capability to a particular chat interface or provider.
+The next stage is an internal Docker daemon with its own images, networks, build
+cache, and volumes. Sysbox is the intended runtime for the outer workspace
+container, selected explicitly with `runtime: sysbox-runc` on a compatible Linux
+host. Existing services can continue using their current runtime.
+
+Sysbox supports nested Docker without a conventional privileged outer container
+or a mount of the host's Docker socket. Inner Docker storage will need a dedicated
+persistent volume and a disk budget. The current Compose file does not yet
+configure this runtime, storage, or daemon.
 
 ## Isolation and practical limits
 
@@ -235,13 +252,17 @@ need a separate disk budget; a container memory limit does not limit that storag
 1. Select an existing server and check Sysbox compatibility, available resources,
    and the impact of installation on its current services.
 2. Add the internal Docker daemon and select the Sysbox runtime in Compose,
-   including persistent Docker storage. Configure the selected host's NetBird IP.
+   including persistent Docker storage and host-specific port bindings.
 3. Verify Codex command execution, a real repository's image builds, and Compose
    tests inside the Sysbox workspace. Add project-specific runtimes as needed.
 
+## Development
+
+See [AGENTS.md](AGENTS.md) for the repository layout, installer conventions,
+compatibility constraints, and checks to run when making changes.
+
 ## References
 
-- [Original discussion: Configs issue #148](https://github.com/Zzackllack/Configs/issues/148)
 - [Sysbox](https://github.com/nestybox/sysbox)
 - [Sysbox Docker-in-Docker guide](https://github.com/nestybox/sysbox/blob/master/docs/user-guide/dind.md)
 - [Sysbox installation and coexistence with Docker](https://github.com/nestybox/sysbox/blob/master/docs/user-guide/install-package.md)
