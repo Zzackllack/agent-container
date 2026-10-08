@@ -1,0 +1,14 @@
+{
+  "hosts": ["unix:///var/run/docker.sock"],
+  "group": "docker",
+  "data-root": "/var/lib/docker",
+  "storage-driver": "overlay2",
+  "features": {
+    "containerd-snapshotter": false
+  },
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
+  }
+}

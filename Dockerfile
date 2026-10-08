@@ -35,11 +35,19 @@ COPY scripts/install-t3.sh versions/t3.env /tmp/t3-install/
 RUN sh /tmp/t3-install/install-t3.sh "$TARGETARCH" \
     && rm -rf /tmp/t3-install
 
-COPY --chmod=0755 scripts/t3-pair.sh /usr/local/bin/t3-pair
+COPY scripts/install-docker.sh versions/docker.env /tmp/docker-install/
+RUN sh /tmp/docker-install/install-docker.sh "$TARGETARCH" \
+    && rm -rf /tmp/docker-install /var/lib/apt/lists/*
 
-# Workspace root is useful for apt and, later, the internal Docker daemon.
+COPY config/docker-daemon.json /etc/docker/daemon.json
+COPY --chmod=0755 scripts/t3-pair.sh /usr/local/bin/t3-pair
+COPY --chmod=0755 scripts/workspace-entrypoint.sh /usr/local/bin/workspace-entrypoint
+COPY --chmod=0755 scripts/workspace-healthcheck.sh /usr/local/bin/workspace-healthcheck
+
+# Workspace root is useful for apt and the internal Docker daemon.
 # Keep interactive tools under an ordinary user; sudo stays inside the workspace.
 RUN useradd --create-home --uid 1000 --shell /bin/bash agent \
+    && usermod --append --groups docker agent \
     && printf 'agent ALL=(ALL) NOPASSWD: ALL\n' > /etc/sudoers.d/agent \
     && chmod 0440 /etc/sudoers.d/agent \
     && install -d -o agent -g agent /workspace \
@@ -50,9 +58,12 @@ RUN useradd --create-home --uid 1000 --shell /bin/bash agent \
 ENV HOME=/home/agent \
     CODEX_HOME=/home/agent/.codex \
     T3CODE_HOME=/home/agent/.t3 \
-    OPENCODE_DISABLE_AUTOUPDATE=true
+    OPENCODE_DISABLE_AUTOUPDATE=true \
+    DOCKER_HOST=unix:///var/run/docker.sock \
+    WORKSPACE_DOCKER_ENABLED=false
 
 USER agent
 WORKDIR /workspace
 EXPOSE 3773
+ENTRYPOINT ["workspace-entrypoint"]
 CMD ["t3", "serve", "--host", "0.0.0.0", "--port", "3773"]

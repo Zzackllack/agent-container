@@ -12,7 +12,7 @@ services:
       - agent-home:/home/agent
       - agent-workspace:/workspace
     healthcheck:
-      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:3773/.well-known/t3/environment"]
+      test: ["CMD", "workspace-healthcheck"]
       interval: 30s
       timeout: 5s
       start_period: 60s

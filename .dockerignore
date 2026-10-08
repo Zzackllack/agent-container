@@ -5,8 +5,14 @@
 !scripts/install-codex.sh
 !scripts/install-opencode.sh
 !scripts/install-t3.sh
+!scripts/install-docker.sh
 !scripts/t3-pair.sh
+!scripts/workspace-entrypoint.sh
+!scripts/workspace-healthcheck.sh
+!config/
+!config/docker-daemon.json
 !versions/
 !versions/codex.env
 !versions/opencode.env
 !versions/t3.env
+!versions/docker.env
