@@ -1,6 +1,6 @@
 {
   "hosts": ["unix:///var/run/docker.sock"],
-  "group": "docker",
+  "group": "agent",
   "data-root": "/var/lib/docker",
   "storage-driver": "overlay2",
   "features": {

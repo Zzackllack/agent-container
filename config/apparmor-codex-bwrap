@@ -1,0 +1,8 @@
+# Host-side exception for Ubuntu's unprivileged user namespace restriction.
+# Sysbox ignores Docker AppArmor profiles; match the executable at exec instead.
+abi <abi/4.0>,
+include <tunables/global>
+
+profile agent-container-codex-bwrap /opt/codex/codex-resources/bwrap flags=(unconfined) {
+  userns,
+}

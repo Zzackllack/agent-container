@@ -8,8 +8,8 @@ rebuildable image.
 **Status:** the Debian 13 image includes Codex, pinned OpenCode v1, and T3 Code.
 Compose starts T3's web server with persistent storage and a configurable host
 port. An opt-in Sysbox configuration starts an internal Docker daemon for image
-builds and container-based tests. This integration still needs end-to-end
-verification on a compatible Linux host.
+builds and container-based tests. Nested builds, Compose networking, persistence,
+and Codex sandboxed Docker commands have been verified on a Linux Sysbox host.
 
 ## Build and use
 
@@ -195,8 +195,10 @@ at runtime; no credentials are included in the image or build context. T3 provid
 the web interface for the installed CLIs; the Codex desktop app is not included.
 
 The container boundary and Codex's own command sandbox are separate. This image
-does not configure a Codex sandbox bypass. Whether its Linux sandbox works under
-the Sysbox runtime needs testing on the selected server.
+does not configure a Codex sandbox bypass. On the tested Ubuntu Sysbox host,
+Codex required an executable-specific AppArmor exception. Docker commands also
+require command network access and access to the inner socket. See the
+[Codex sandbox checks and host exception](docs/sysbox.md#codex-command-sandbox).
 
 ## Recorded validation
 
@@ -211,23 +213,36 @@ preserved home/workspace files, the T3 database, and the paired browser session.
 `sh tests/t3-pair.sh` checks address rewriting and rejection of malformed origins.
 
 These checks do not cover authenticated provider tasks, native client
-connections, T3 Connect, remote network reachability, or nested Docker. Baseline
+connections, T3 Connect, or remote client reachability. Baseline
 Git, C compilation, and sudo checks also passed.
 
 On the tested Docker Desktop setup with the default runtime,
-`codex sandbox linux /bin/true` fails because bubblewrap cannot create a namespace.
-The image's CLI installation works, but that does not establish working
-sandboxed agent execution. Resolving and testing that under Sysbox is part of
-the server setup.
+`codex sandbox -- /bin/true` fails because bubblewrap cannot create a namespace.
+CLI installation alone does not establish working sandboxed agent execution.
 
-The Docker-enabled image built on native arm64 and emulated amd64. All installed
-tool version checks and daemon configuration validation passed. Launcher tests
-passed for readiness, user switching, daemon/application failure, and graceful
-shutdown. The base Compose workspace became healthy and retained project files
-after recreation. The launcher tests use a mock daemon and do not establish that
-inner containers run under Sysbox. The smoke test in
-`tests/nested-docker.sh` covers an actual image build, an inner Compose service,
-networking, bind mounts, and volume persistence when run inside that environment.
+The Docker-enabled image built on native arm64 and emulated amd64. Tool version
+checks and daemon configuration validation passed. Launcher tests passed for
+readiness, user switching, daemon/application failure, and graceful shutdown.
+The base Compose workspace became healthy and retained project files after
+recreation. These lifecycle tests use a mock daemon.
+
+On 2026-10-08, a native amd64 Ubuntu 24.04 host with Linux 7.0, ext4, Docker
+28.5.1, and Sysbox CE 0.7.1 passed the actual nested Docker checks:
+
+- An inner image build with `COPY` and `RUN`, Compose networking/DNS, bind mounts,
+  HTTP port forwarding, and inner volume persistence.
+- HTTP forwarding through both the inner and outer container port mappings.
+- Inner image/volume and workspace file persistence after outer recreation.
+- T3 health, an unprivileged application user, and Sysbox's outer user-ID mapping.
+- Codex sandbox startup and direct filesystem restrictions after the documented
+  host AppArmor exception. Docker commands worked with workspace-write and
+  command networking explicitly enabled.
+
+Sysbox installation retained the host's default `runc` runtime and did not
+restart Docker. This is a result for that host, not a promise about other hosts.
+The smoke test in `tests/nested-docker.sh` reproduces the inner build/Compose
+checks. Inner cross-architecture builds and authenticated provider tasks remain
+unverified.
 
 ## Why this project exists
 
@@ -277,12 +292,9 @@ need a separate disk budget; a container memory limit does not limit that storag
 
 ## Next steps
 
-1. Select an existing server and check Sysbox compatibility, available resources,
-   and the impact of installation on its current services.
-2. Install Sysbox on the selected Linux host and start the override. Run the
-   nested Docker smoke test and check storage across outer container recreation.
-3. Verify Codex command execution, a real repository's image builds, and Compose
-   tests inside the Sysbox workspace. Add project-specific runtimes as needed.
+1. Configure provider authentication and run an agent task against a real project.
+2. Add the project's language runtimes and verify its image builds/Compose tests.
+3. Configure client reachability and verify the intended web/native clients.
 
 ## Development
 

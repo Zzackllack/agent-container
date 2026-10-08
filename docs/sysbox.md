@@ -5,8 +5,9 @@ The Sysbox override starts an internal daemon before T3 and gives the `agent`
 user access to its Unix socket. The host runs Sysbox; Sysbox is not installed
 inside the image.
 
-This integration has local build and lifecycle checks. Running inner containers
-still needs verification on a compatible Linux host with Sysbox installed.
+Nested builds, Compose networking, two-layer port forwarding, persistence, and
+Codex sandboxed Docker commands passed on an amd64 Ubuntu 24.04 Sysbox host.
+The README records the tested versions; verify compatibility on your own host.
 
 ## Host requirements
 
@@ -109,8 +110,10 @@ use the shorter `docker compose ...` commands throughout the README.
 The override changes startup to container root so the launcher can start
 `dockerd`. T3 and its terminal/agent children run as `agent` after readiness.
 Compose `exec` defaults to the configured startup user, so use `--user agent`
-for interactive commands. Passwordless sudo and membership in the inner Docker
-group give the agent control of this workspace, not of a host-mounted daemon.
+for interactive commands. Passwordless sudo and access to the inner Docker
+socket give the agent control of this workspace. The socket uses the primary
+`agent` group, which remains mapped inside Codex's nested user namespace; a
+supplementary `docker` group does not. No host daemon is mounted.
 
 The healthcheck requires both the inner daemon and T3. If either managed process
 exits, the launcher stops the other and Compose can restart the workspace.
@@ -166,11 +169,17 @@ docker compose -f compose.yaml -f compose.sysbox.yaml exec --user agent workspac
 docker compose -f compose.yaml -f compose.sysbox.yaml exec --user agent workspace docker buildx version
 ```
 
-Then run `sh /workspace/agent-container/tests/nested-docker.sh` inside the
-workspace after cloning this repository there (adjust the path to your checkout).
+Run the smoke test from the host's checkout, passing it into the workspace:
+
+```sh
+docker compose -f compose.yaml -f compose.sysbox.yaml exec -T --user agent workspace \
+    sh -s < tests/nested-docker.sh
+```
+
 That test builds an inner image, exercises an inner Compose service and bind
 mount, checks port forwarding within the workspace, and verifies an inner volume.
-It only removes its uniquely named test resources.
+It only removes its uniquely named test resources. If this repository is already
+cloned inside the workspace, `sh tests/nested-docker.sh` works there too.
 
 Recreate the outer container without deleting volumes and confirm an existing
 inner image and volume still exist. Verify a real project's build/Compose tests
@@ -178,6 +187,101 @@ and Codex's command sandbox separately. For inner cross-architecture builds,
 Sysbox's [multi-arch requirements](https://github.com/nestybox/sysbox/blob/master/docs/user-guide/dind.md#inner-docker-multi-arch-builds--v067-)
 include Linux kernel 6.7 or newer; the image's amd64/arm64 support alone does not
 establish this capability.
+
+## Codex command sandbox
+
+Codex's command sandbox is separate from Sysbox. For the pinned Linux CLI, use
+`codex sandbox -- <command>`; `linux` is not a subcommand in this package.
+Check startup inside the workspace:
+
+```sh
+codex sandbox -- /bin/true
+```
+
+### Ubuntu AppArmor exception
+
+On Ubuntu hosts with `kernel.apparmor_restrict_unprivileged_userns=1`, Codex's
+bundled bubblewrap may fail with `loopback: Failed RTM_NEWADDR: Operation not
+permitted`. Inspect host kernel logs for `unprivileged_userns` denials before
+applying this exception:
+
+```sh
+sysctl kernel.apparmor_restrict_unprivileged_userns
+sudo journalctl -k --since '10 minutes ago' | rg 'apparmor|unprivileged_userns'
+```
+
+Ubuntu documents an [executable-specific user namespace allowance](https://documentation.ubuntu.com/release-notes/24.04/).
+This repository provides one for `/opt/codex/codex-resources/bwrap`. From the
+host checkout, on a host supporting AppArmor ABI 4:
+
+```sh
+sudo apparmor_parser --skip-kernel-load config/apparmor-codex-bwrap
+sudo install -m 0644 config/apparmor-codex-bwrap /etc/apparmor.d/agent-container-codex-bwrap
+sudo apparmor_parser --replace /etc/apparmor.d/agent-container-codex-bwrap
+```
+
+The profile allows user namespace creation for that executable path. It applies
+to matching executables on this host, including across container mount
+namespaces; it is not scoped to a Compose project. It leaves the global user
+namespace restriction enabled. It is an allowance, not an added AppArmor
+confinement policy. The image's bundled executable is root-owned.
+
+This is a host file, not part of the image. Setting a Compose AppArmor profile
+will not substitute for it: [Sysbox ignores Docker's AppArmor profiles](https://github.com/nestybox/sysbox/blob/master/docs/user-guide/security.md#apparmor).
+Recheck the path when upgrading Codex. To remove this optional exception later:
+
+```sh
+sudo apparmor_parser --remove /etc/apparmor.d/agent-container-codex-bwrap
+sudo rm /etc/apparmor.d/agent-container-codex-bwrap
+```
+
+### Docker commands within the sandbox
+
+The default command sandbox restricts networking, including Docker socket
+connections. To test the intended Docker workflow without disabling filesystem
+sandboxing, run inside the workspace:
+
+```sh
+codex sandbox -c 'sandbox_mode="workspace-write"' \
+    -c 'sandbox_workspace_write.network_access=true' -- \
+    docker run --rm busybox:1.37.0 echo nested-docker-ok
+```
+
+Pass these overrides directly to `sandbox`. In this pinned CLI, a preceding
+global `-s workspace-write` does not select the debug sandbox's policy. For
+normal CLI sessions that need this access, merge these settings into the
+workspace user's existing `$CODEX_HOME/config.toml` rather than replacing it:
+
+```toml
+sandbox_mode = "workspace-write"
+
+[sandbox_workspace_write]
+network_access = true
+writable_roots = ["/home/agent/.docker"]
+```
+
+Buildx writes client state under `~/.docker`, so that directory needs write
+access for normal builds. The smoke test instead uses temporary Docker client
+state in its workspace directory. Keep any additional writable paths explicit.
+
+This enables command networking beyond Docker as well. It is opt-in; this image
+does not write a Codex permission configuration. See [official OpenAI documentation](https://learn.chatgpt.com/docs/agent-approvals-security)
+for sandbox/network controls. T3 may supply per-session permissions, so verify
+an authenticated agent task separately from this standalone command test.
+
+Docker access grants control over the whole workspace through its daemon. An
+inner container can mount workspace paths and perform writes on behalf of a
+sandboxed command. Codex's direct filesystem restrictions therefore do not
+constrain Docker-mediated changes; Sysbox remains the boundary toward the host.
+
+To run the full nested smoke test through Codex from the host checkout:
+
+```sh
+docker compose -f compose.yaml -f compose.sysbox.yaml exec -T --user agent workspace \
+    codex sandbox -c 'sandbox_mode="workspace-write"' \
+    -c 'sandbox_workspace_write.network_access=true' -- \
+    sh -s < tests/nested-docker.sh
+```
 
 ## Troubleshooting
 
@@ -189,6 +293,9 @@ establish this capability.
   retry with privileged mode, disabled iptables, or a slower storage fallback.
 - **The outer container is healthy but a remote service is unreachable:** check
   both inner and outer port mappings, published interfaces, firewall, and routing.
+- **Docker works in a shell but Codex reports socket permission denied:** check
+  the sandbox's command networking and the socket's `agent` group. Do not make
+  the socket world-writable.
 - **Interactive commands run as root:** add `--user agent` to `compose exec`.
 
 Sysbox still shares the host kernel. Workspace credentials, files, and allowed

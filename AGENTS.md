@@ -24,6 +24,8 @@ assumptions about a particular VPN, or snapshots of a contributor's devices.
 - `scripts/t3-pair.sh`: advertise a client-reachable origin for T3's pairing URL.
 - `tests/t3-pair.sh`: checks the helper using a mock CLI without real credentials.
 - `config/docker-daemon.json`: inner daemon storage, socket, and log settings.
+- `config/apparmor-codex-bwrap`: optional host-only Ubuntu namespace allowance;
+  keep it out of the image and document its executable-path scope.
 - `scripts/workspace-entrypoint.sh`: Docker readiness and process shutdown;
   `scripts/workspace-healthcheck.sh`: daemon and T3 health.
 - `tests/workspace-entrypoint.sh`: lifecycle checks with a mock daemon;
@@ -63,6 +65,9 @@ assumptions about a particular VPN, or snapshots of a contributor's devices.
   nested Docker. Keep Sysbox opt-in for this workspace, the Docker API on its
   internal Unix socket, and inner data exclusively in `/var/lib/docker`. Preserve
   classic `overlay2` storage and disabled containerd snapshotters/userns-remap.
+  Keep socket access on the primary `agent` group; supplementary groups are
+  unmapped in Codex's nested user namespace. Docker access controls the workspace
+  and can perform writes beyond Codex's direct filesystem permissions.
 - Do not commit `.env`, provider credentials, home-volume contents, or real
   pairing URLs. Mint grants through T3 and preserve the credential fragment when
   rewriting an origin; do not implement a separate authentication mechanism.

@@ -47,11 +47,10 @@ COPY --chmod=0755 scripts/workspace-healthcheck.sh /usr/local/bin/workspace-heal
 # Workspace root is useful for apt and the internal Docker daemon.
 # Keep interactive tools under an ordinary user; sudo stays inside the workspace.
 RUN useradd --create-home --uid 1000 --shell /bin/bash agent \
-    && usermod --append --groups docker agent \
     && printf 'agent ALL=(ALL) NOPASSWD: ALL\n' > /etc/sudoers.d/agent \
     && chmod 0440 /etc/sudoers.d/agent \
     && install -d -o agent -g agent /workspace \
-        /home/agent/.codex /home/agent/.t3 \
+        /home/agent/.codex /home/agent/.t3 /home/agent/.docker \
         /home/agent/.config/opencode /home/agent/.local/share/opencode \
         /home/agent/.local/state/opencode /home/agent/.cache/opencode
 

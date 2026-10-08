@@ -10,6 +10,10 @@ fi
 test_dir=$(mktemp -d /workspace/.nested-docker-test.XXXXXX)
 project="agent-container-check-$(date +%s)-$$"
 export DOCKER_HOST=unix:///var/run/docker.sock
+# Buildx writes client state. Keep it in the test's writable directory, including
+# when the test runs through Codex; no existing Docker credentials are needed.
+export DOCKER_CONFIG="$test_dir/docker-client"
+mkdir "$DOCKER_CONFIG"
 # DOCKER_CONTEXT takes precedence over DOCKER_HOST; inherited remote settings
 # must not redirect a smoke test to a different daemon.
 unset DOCKER_CONTEXT DOCKER_TLS_VERIFY DOCKER_CERT_PATH
@@ -60,10 +64,10 @@ volumes:
 COMPOSE
 
 compose up -d --build --wait web
-test "$(compose run --rm --no-deps client)" = nested-http-ok
+test "$(compose run --rm --no-deps --interactive=false -T client)" = nested-http-ok
 address=$(compose port web 8080)
 test "$(curl --fail --silent --show-error "http://$address")" = nested-http-ok
-compose exec -T web sh -ec 'printf "persisted\n" > /state/marker'
+compose exec -T --interactive=false web sh -ec 'printf "persisted\n" > /state/marker'
 compose up -d --force-recreate --wait web
-test "$(compose exec -T web cat /state/marker)" = persisted
+test "$(compose exec -T --interactive=false web cat /state/marker)" = persisted
 echo "Nested image build, Compose networking, bind mount, and volume checks passed."
