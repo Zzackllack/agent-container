@@ -4,8 +4,9 @@
 
 This repository builds a Debian 13 development container with Codex CLI,
 OpenCode, and T3 Code's web interface. Docker Compose starts the workspace and
-persists its home and project directories. Nested Docker and Sysbox integration
-are planned; do not describe them as working until implemented and verified.
+persists its home and project directories. `compose.sysbox.yaml` opts into an
+internal Docker daemon on a Linux host with Sysbox. Local builds and launcher
+checks do not establish working nested containers; verify that on a Sysbox host.
 
 Keep the setup usable on unrelated hosts. Examples must use generic addresses,
 domains, and repository names. Avoid personal paths, private issue links,
@@ -14,22 +15,30 @@ assumptions about a particular VPN, or snapshots of a contributor's devices.
 ## Where changes belong
 
 - `Dockerfile`: base packages, tool installation, user, and default process.
-- `compose.yaml` and `.env.example`: runtime configuration and portable defaults.
-- `versions/*.env`: tool versions and SHA-256 hashes for amd64 and arm64.
+- `compose.yaml`, `compose.sysbox.yaml`, and `.env.example`: runtime configuration.
+- `versions/*.env`: pinned releases/checksums or exact signed APT package versions.
 - `scripts/install-*.sh`: download, verify, and install upstream release packages.
   Docker copies each installer and its version file into the same temporary
   directory; installers expect this layout rather than running directly from
   the source tree.
 - `scripts/t3-pair.sh`: advertise a client-reachable origin for T3's pairing URL.
 - `tests/t3-pair.sh`: checks the helper using a mock CLI without real credentials.
+- `config/docker-daemon.json`: inner daemon storage, socket, and log settings.
+- `scripts/workspace-entrypoint.sh`: Docker readiness and process shutdown;
+  `scripts/workspace-healthcheck.sh`: daemon and T3 health.
+- `tests/workspace-entrypoint.sh`: lifecycle checks with a mock daemon;
+  `tests/nested-docker.sh`: real inner build/Compose checks on a Sysbox workspace.
+- `docs/sysbox.md`: host requirements, installation, operation, and verification.
 - `README.md`: setup, access methods, current limitations, and recorded validation.
 
 ## Image and script changes
 
-- Use readable POSIX `sh` for scripts, with `set -eu`, quoted variables, and
+- Use POSIX `sh` for installers and simple helpers. The process launcher and its
+  lifecycle test use Bash. Use strict error handling, quoted variables, and
   temporary-directory cleanup. Keep installers separate from runtime helpers.
-- Verify pinned checksums before extracting downloads. Support both `amd64` and
-  `arm64`, and reject unsupported architectures explicitly.
+- Verify pinned checksums before extracting archives; Docker packages use signed
+  APT metadata and a checksum-pinned key. Support `amd64` and `arm64`, and reject
+  unsupported architectures explicitly.
 - Preserve complete upstream packages when bundled helpers are required. Codex
   and T3 cannot be reduced to just their main executable.
 - Check official release notes and upstream documentation before changing tool
@@ -43,13 +52,17 @@ assumptions about a particular VPN, or snapshots of a contributor's devices.
 
 ## Runtime boundaries
 
-- Preserve loopback publishing by default, configurable host bindings, and T3's
-  pairing authorization. Compose owns the foreground server; do not add another
-  supervisor or a background systemd installation for T3.
+- Preserve loopback publishing, configurable host bindings, and T3 pairing.
+  The launcher manages Docker and T3 together in Sysbox mode; Compose owns
+  restart and process reaping. Do not add a background systemd service for T3.
 - The default user is `agent` (UID/GID 1000), with sudo inside the container.
-  Keep `/home/agent` and `/workspace` persistent and owned by that user.
+  Keep `/home/agent` and `/workspace` persistent and owned by that user. The Sysbox
+  override starts as root, then launches the application with `setpriv` as agent.
+  Use `compose exec --user agent` for interactive work.
 - Do not use a host Docker socket mount or `privileged: true` as a shortcut for
-  the planned nested Docker setup. Keep Sysbox opt-in for this workspace.
+  nested Docker. Keep Sysbox opt-in for this workspace, the Docker API on its
+  internal Unix socket, and inner data exclusively in `/var/lib/docker`. Preserve
+  classic `overlay2` storage and disabled containerd snapshotters/userns-remap.
 - Do not commit `.env`, provider credentials, home-volume contents, or real
   pairing URLs. Mint grants through T3 and preserve the credential fragment when
   rewriting an origin; do not implement a separate authentication mechanism.
@@ -61,7 +74,8 @@ Run these checks from the repository root after relevant changes:
 ```sh
 git diff --check
 docker compose config --quiet
-for script in scripts/*.sh tests/*.sh; do sh -n "$script"; done
+docker compose -f compose.yaml -f compose.sysbox.yaml config --quiet
+for script in scripts/*.sh tests/*.sh; do bash -n "$script"; done
 sh tests/t3-pair.sh
 ```
 
@@ -71,7 +85,10 @@ For image, installer, or version changes, also run:
 docker build --check .
 docker build -t agent-container:check .
 docker run --rm --init agent-container:check sh -ec \
-  'codex --version; opencode --version; t3 --version'
+  'codex --version; opencode --version; t3 --version; docker --version; docker compose version; docker buildx version; sudo dockerd --validate'
+docker run --rm --init --user 0:0 \
+  --mount "type=bind,source=$PWD,target=/tests,readonly" \
+  agent-container:check bash /tests/tests/workspace-entrypoint.sh
 ```
 
 Validate architecture-specific changes on both Linux architectures and state

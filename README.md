@@ -7,8 +7,9 @@ rebuildable image.
 
 **Status:** the Debian 13 image includes Codex, pinned OpenCode v1, and T3 Code.
 Compose starts T3's web server with persistent storage and a configurable host
-port. An internal Docker daemon and Sysbox integration are planned so agents
-can also build images and run container-based tests. They are not implemented yet.
+port. An opt-in Sysbox configuration starts an internal Docker daemon for image
+builds and container-based tests. This integration still needs end-to-end
+verification on a compatible Linux host.
 
 ## Build and use
 
@@ -19,7 +20,16 @@ Clone this repository and run the following commands from its root:
 ```sh
 cp .env.example .env
 docker compose up -d --build --wait
-docker compose exec workspace t3-pair
+docker compose exec --user agent workspace t3-pair
+```
+
+This starts T3 with the internal Docker daemon disabled. To enable Docker-in-Docker
+on a Linux host with Sysbox, follow the [Sysbox setup guide](docs/sysbox.md) and
+start with both Compose files:
+
+```sh
+docker compose -f compose.yaml -f compose.sysbox.yaml up -d --build --wait
+docker compose -f compose.yaml -f compose.sysbox.yaml exec --user agent workspace bash
 ```
 
 Open the printed one-time pairing URL in your browser. The default host binding
@@ -27,11 +37,13 @@ is `127.0.0.1:3773`; the container listens on `0.0.0.0:3773` so Docker can forwa
 that port. T3's own pairing and device authorization remain enabled. An unpaired
 browser cannot control the workspace just by knowing its address.
 
-The image starts `t3 serve` in the foreground. Compose handles restart and process
-reaping; no systemd service is installed inside the container. To open a shell:
+In the base configuration, the launcher runs `t3 serve` directly. In Sysbox mode,
+it starts Docker first and manages both processes, running T3 as `agent`. Compose
+handles restart and process reaping; no systemd service is installed inside the
+container. To open a shell in the base configuration:
 
 ```sh
-docker compose exec workspace bash
+docker compose exec --user agent workspace bash
 ```
 
 The image uses `debian:trixie-slim` (Debian 13) and supports Linux amd64 and arm64.
@@ -40,6 +52,11 @@ process/network tools, archive utilities, and a basic C/C++ build toolchain.
 APT is supplied by Debian; install extra packages with `sudo apt-get update` and
 `sudo apt-get install ...`. Package changes made inside a container disappear
 when that container is removed; add lasting tools to the Dockerfile.
+
+Docker Engine/CLI **29.8.2**, containerd **2.3.6**, Buildx **0.37.1**, and Compose
+**5.6.0** are installed from Docker's signed Debian repository with exact package
+versions in `versions/docker.env`. The repository signing key is checksum-pinned.
+These are the tools inside the workspace; the host can use a different version.
 
 The default user is `agent` (UID/GID 1000), with passwordless sudo inside the
 container. Compose persists the complete `/home/agent` directory in `agent-home`
@@ -68,8 +85,8 @@ of OpenCode v2. Keep these pins together when evaluating upgrades.
 Configure provider authentication in the workspace environment:
 
 ```sh
-docker compose exec workspace opencode auth login
-docker compose exec workspace codex login --device-auth
+docker compose exec --user agent workspace opencode auth login
+docker compose exec --user agent workspace codex login --device-auth
 ```
 
 In T3's web UI, open **Settings → Providers** for this environment and enable
@@ -103,9 +120,9 @@ the service and mint a fresh link:
 
 ```sh
 docker compose up -d --wait
-docker compose exec workspace t3-pair
+docker compose exec --user agent workspace t3-pair
 # Or override the advertised origin for this link:
-docker compose exec workspace t3-pair http://192.168.1.20:3773
+docker compose exec --user agent workspace t3-pair http://192.168.1.20:3773
 ```
 
 `t3-pair` uses T3 to mint a five-minute, one-time grant and replaces the container's
@@ -133,7 +150,7 @@ web UI matches its server version.
 T3 Connect is an alternative to direct private-network access:
 
 ```sh
-docker compose exec workspace t3 connect
+docker compose exec --user agent workspace t3 connect
 # Complete the browser/code sign-in. Decline background service installation;
 # Compose already owns the server process.
 docker compose restart workspace
@@ -179,7 +196,7 @@ the web interface for the installed CLIs; the Codex desktop app is not included.
 
 The container boundary and Codex's own command sandbox are separate. This image
 does not configure a Codex sandbox bypass. Whether its Linux sandbox works under
-the eventual Sysbox runtime needs testing on the selected server.
+the Sysbox runtime needs testing on the selected server.
 
 ## Recorded validation
 
@@ -203,6 +220,15 @@ The image's CLI installation works, but that does not establish working
 sandboxed agent execution. Resolving and testing that under Sysbox is part of
 the server setup.
 
+The Docker-enabled image built on native arm64 and emulated amd64. All installed
+tool version checks and daemon configuration validation passed. Launcher tests
+passed for readiness, user switching, daemon/application failure, and graceful
+shutdown. The base Compose workspace became healthy and retained project files
+after recreation. The launcher tests use a mock daemon and do not establish that
+inner containers run under Sysbox. The smoke test in
+`tests/nested-docker.sh` covers an actual image build, an inner Compose service,
+networking, bind mounts, and volume persistence when run inside that environment.
+
 ## Why this project exists
 
 Development workflows need more than file edits. Verifying a change can require
@@ -212,24 +238,26 @@ An agent needs that capability to complete the development workflow.
 A repeatable workspace can use existing hardware and keep tool installation
 separate from the host's configuration. Pinned downloads, persistent project
 storage, and a bundled web UI make the environment easier to rebuild and access
-from different devices. The planned internal Docker daemon will let agents run
-project containers without controlling the host's Docker daemon.
+from different devices. The Sysbox configuration gives the workspace an internal
+Docker daemon for project containers, separate from the host's Docker daemon.
 
 The focus is development: editing repositories, building software, running
 tests, and inspecting results. Chat bots and general-purpose assistant
 integrations are outside the initial scope.
 
-## Planned Docker isolation
+## Docker isolation
 
-The next stage is an internal Docker daemon with its own images, networks, build
-cache, and volumes. Sysbox is the intended runtime for the outer workspace
-container, selected explicitly with `runtime: sysbox-runc` on a compatible Linux
-host. Existing services can continue using their current runtime.
+The Sysbox override configures an internal Docker daemon with its own images,
+networks, build cache, and volumes. Sysbox runs the outer workspace container,
+selected explicitly with `runtime: sysbox-runc` on a compatible Linux host.
+Existing services can continue using their current runtime.
 
 Sysbox supports nested Docker without a conventional privileged outer container
-or a mount of the host's Docker socket. Inner Docker storage will need a dedicated
-persistent volume and a disk budget. The current Compose file does not yet
-configure this runtime, storage, or daemon.
+or a mount of the host's Docker socket. The `agent-docker` volume persists inner
+Docker storage at `/var/lib/docker`; it needs its own disk budget. The Docker API
+stays on a Unix socket inside the workspace. To reach inner application ports
+externally, publish them at both container layers. See the
+[setup, storage, networking, and verification guide](docs/sysbox.md).
 
 ## Isolation and practical limits
 
@@ -251,8 +279,8 @@ need a separate disk budget; a container memory limit does not limit that storag
 
 1. Select an existing server and check Sysbox compatibility, available resources,
    and the impact of installation on its current services.
-2. Add the internal Docker daemon and select the Sysbox runtime in Compose,
-   including persistent Docker storage and host-specific port bindings.
+2. Install Sysbox on the selected Linux host and start the override. Run the
+   nested Docker smoke test and check storage across outer container recreation.
 3. Verify Codex command execution, a real repository's image builds, and Compose
    tests inside the Sysbox workspace. Add project-specific runtimes as needed.
 
