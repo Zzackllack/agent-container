@@ -16,6 +16,12 @@ assumptions about a particular VPN, or snapshots of a contributor's devices.
 
 - `Dockerfile`: base packages, tool installation, user, and default process.
 - `compose.yaml`, `compose.sysbox.yaml`, and `.env.example`: runtime configuration.
+- `compose.instructions.yaml`: opt-in read-only instruction directory mount.
+- `scripts/sync-instructions.sh`: host-side Git fetch and atomic publication;
+  `scripts/workspace-instructions.sh`: link global files without replacing them.
+- `tests/sync-instructions.sh`: local Git fixtures and last-good publication.
+- `tests/workspace-instructions.sh`: real mounts, symlinks, and atomic updates.
+- `docs/instructions.md`: host credentials, initial sync, and cron setup.
 - `versions/*.env`: pinned releases/checksums or exact signed APT package versions.
 - `scripts/install-*.sh`: download, verify, and install upstream release packages.
   Docker copies each installer and its version file into the same temporary
@@ -68,6 +74,10 @@ assumptions about a particular VPN, or snapshots of a contributor's devices.
   Keep socket access on the primary `agent` group; supplementary groups are
   unmapped in Codex's nested user namespace. Docker access controls the workspace
   and can perform writes beyond Codex's direct filesystem permissions.
+- Keep instruction synchronization on the host; mount only its published
+  directory read-only. Do not bake personal rules or Git credentials into the
+  image, mount the repository cache, overwrite existing global files, or start
+  cron inside the workspace. Keep failed syncs from replacing the last-good file.
 - Do not commit `.env`, provider credentials, home-volume contents, or real
   pairing URLs. Mint grants through T3 and preserve the credential fragment when
   rewriting an origin; do not implement a separate authentication mechanism.
@@ -94,6 +104,10 @@ docker run --rm --init agent-container:check sh -ec \
 docker run --rm --init --user 0:0 \
   --mount "type=bind,source=$PWD,target=/tests,readonly" \
   agent-container:check bash /tests/tests/workspace-entrypoint.sh
+docker run --rm --init --user 0:0 \
+  --mount "type=bind,source=$PWD,target=/tests,readonly" \
+  agent-container:check bash /tests/tests/sync-instructions.sh
+bash tests/workspace-instructions.sh agent-container:check
 ```
 
 Validate architecture-specific changes on both Linux architectures and state

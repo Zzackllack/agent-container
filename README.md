@@ -100,6 +100,13 @@ remote server update button or `opencode upgrade` to change this pinned image.
 Installed tools under `/opt` and `/usr/local/bin` are root-owned; interactive
 clients should not replace them.
 
+## Shared global instructions
+
+Keep personal `AGENTS.md` preferences in a separate Git repository. The optional
+[Git sync setup](docs/instructions.md) fetches them on the host every 15 minutes,
+publishes a last-good copy, and mounts it read-only for Codex and OpenCode.
+Updates do not need an image rebuild; start a fresh agent session afterward.
+
 ## Remote access
 
 Direct pairing requires the client to reach the host's published port. Choose a
