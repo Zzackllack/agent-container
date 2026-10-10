@@ -28,6 +28,11 @@ assumptions about a particular VPN, or snapshots of a contributor's devices.
   directory; installers expect this layout rather than running directly from
   the source tree.
 - `scripts/t3-pair.sh`: advertise a client-reachable origin for T3's pairing URL.
+- `scripts/agent-cli.sh`: Codex/OpenCode launchers loading the private Context7 key;
+  native executables remain under `/opt/codex` and `/opt/opencode`.
+- `scripts/context7-setup.sh`, `tests/context7-setup.sh`: hidden/stdin key setup,
+  config preservation, and pinned-CLI validation without real credentials.
+- `docs/github.md`, `docs/context7.md`: runtime auth/setup and verification.
 - `tests/t3-pair.sh`: checks the helper using a mock CLI without real credentials.
 - `config/docker-daemon.json`: inner daemon storage, socket, and log settings.
 - `config/apparmor-codex-bwrap`: optional host-only Ubuntu namespace allowance;
@@ -54,6 +59,9 @@ assumptions about a particular VPN, or snapshots of a contributor's devices.
   when updating either tool. Update both architecture hashes and README versions.
 - Keep tool upgrades in the image build. Preserve disabled OpenCode auto-update
   and root-owned installations instead of replacing binaries at runtime.
+- GitHub CLI archives are pinned in `versions/gh.env`. Keep Context7 setup on the
+  hosted HTTP transport; use the existing native config editors rather than
+  adding a separate Node runtime or hand-editing TOML/JSONC.
 - Install APT packages with `--no-install-recommends` and remove package lists in
   the same layer. Add new `COPY` inputs to the `.dockerignore` allowlist; keep
   credentials and workspace files out of the build context.
@@ -81,6 +89,9 @@ assumptions about a particular VPN, or snapshots of a contributor's devices.
 - Do not commit `.env`, provider credentials, home-volume contents, or real
   pairing URLs. Mint grants through T3 and preserve the credential fragment when
   rewriting an origin; do not implement a separate authentication mechanism.
+- Accept Context7 keys through a hidden prompt or stdin, never command arguments
+  or logs. Keep the key, configs, and backups private; test only with fake keys.
+  Avoid displaying raw provider config/debug output with resolved credentials.
 
 ## Verification
 
@@ -100,7 +111,7 @@ For image, installer, or version changes, also run:
 docker build --check .
 docker build -t agent-container:check .
 docker run --rm --init agent-container:check sh -ec \
-  'codex --version; opencode --version; t3 --version; docker --version; docker compose version; docker buildx version; sudo dockerd --validate'
+  'codex --version; opencode --version; t3 --version; gh --version; docker --version; docker compose version; docker buildx version; sudo dockerd --validate'
 docker run --rm --init --user 0:0 \
   --mount "type=bind,source=$PWD,target=/tests,readonly" \
   agent-container:check bash /tests/tests/workspace-entrypoint.sh
@@ -108,6 +119,9 @@ docker run --rm --init --user 0:0 \
   --mount "type=bind,source=$PWD,target=/tests,readonly" \
   agent-container:check bash /tests/tests/sync-instructions.sh
 bash tests/workspace-instructions.sh agent-container:check
+docker run --rm --init \
+  --mount "type=bind,source=$PWD,target=/tests,readonly" \
+  agent-container:check bash /tests/tests/context7-setup.sh
 ```
 
 Validate architecture-specific changes on both Linux architectures and state

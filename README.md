@@ -49,6 +49,7 @@ docker compose exec --user agent workspace bash
 The image uses `debian:trixie-slim` (Debian 13) and supports Linux amd64 and arm64.
 It includes Git, curl, CA certificates, SSH client, jq, ripgrep, less, nano,
 process/network tools, archive utilities, and a basic C/C++ build toolchain.
+GitHub CLI **2.102.0** is also installed from checksum-pinned upstream packages.
 APT is supplied by Debian; install extra packages with `sudo apt-get update` and
 `sudo apt-get install ...`. Package changes made inside a container disappear
 when that container is removed; add lasting tools to the Dockerfile.
@@ -106,6 +107,32 @@ Keep personal `AGENTS.md` preferences in a separate Git repository. The optional
 [Git sync setup](docs/instructions.md) fetches them on the host every 15 minutes,
 publishes a last-good copy, and mounts it read-only for Codex and OpenCode.
 Updates do not need an image rebuild; start a fresh agent session afterward.
+
+## GitHub and Context7 setup
+
+GitHub CLI is ready to use after runtime login:
+
+```sh
+docker compose exec --user agent workspace gh auth login --hostname github.com --git-protocol https --web
+docker compose exec --user agent workspace gh auth setup-git
+docker compose exec --user agent workspace gh auth status
+```
+
+Open the printed login URL on your Mac or phone. The [GitHub CLI guide](docs/github.md)
+covers installation, persistent credentials, token-based automation, and Git access.
+
+To configure Context7 MCP for both Codex and OpenCode, run:
+
+```sh
+docker compose exec --user agent workspace context7-setup
+```
+
+Enter your key at the hidden prompt. The helper keeps one private key file in
+the home volume and preserves existing CLI settings. The hosted MCP connection
+needs no Node.js installation. See [Context7 setup and verification](docs/context7.md)
+for key rotation, stdin input, existing-config handling, and fresh provider sessions.
+When using overrides, keep the configured `COMPOSE_FILE` or the appropriate
+`-f` arguments on these commands.
 
 ## Remote access
 
@@ -212,6 +239,13 @@ require command network access and access to the inner socket. See the
 Development checks covered arm64 natively and amd64 under Docker Desktop
 emulation. All three CLI version checks passed, and T3 served its environment
 descriptor on both architectures. Docker's build checks reported no warnings.
+
+The GitHub CLI/Context7 image changes also passed native arm64 and emulated
+amd64 builds and CLI checks. Fake-key tests verified preserved config comments
+and settings, key rotation/environment overrides, private file permissions, and
+rejection of invalid configs. A local mock MCP endpoint verified OpenCode's
+bearer header. Real GitHub login, Context7 authentication/queries, and T3 agent
+tasks using these credentials remain unverified.
 
 On arm64, Compose reached healthy status, an unpaired browser saw the pairing
 screen, and a one-time link opened the working web UI. T3 detected Codex 0.161.0
