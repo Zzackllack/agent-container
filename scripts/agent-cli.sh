@@ -1,0 +1,19 @@
+#!/bin/sh
+set -eu
+
+# Each new CLI process reads the persisted key, including T3's provider children
+# and compose exec shells. No startup-only environment export is needed.
+key_file=${XDG_CONFIG_HOME:-$HOME/.config}/agent-container/context7.key
+if [ -z "${CONTEXT7_API_KEY:-}" ] && [ -f "$key_file" ]; then
+    if [ ! -r "$key_file" ]; then
+        echo "Context7 key file is unreadable by this workspace user." >&2
+        exit 1
+    fi
+    IFS= read -r CONTEXT7_API_KEY < "$key_file"
+    export CONTEXT7_API_KEY
+fi
+case "${0##*/}" in
+    codex) exec /opt/codex/bin/codex "$@" ;;
+    opencode) exec /opt/opencode/opencode "$@" ;;
+    *) echo "Invoke this launcher as codex or opencode." >&2; exit 1 ;;
+esac

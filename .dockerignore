@@ -6,6 +6,9 @@
 !scripts/install-opencode.sh
 !scripts/install-t3.sh
 !scripts/install-docker.sh
+!scripts/install-gh.sh
+!scripts/agent-cli.sh
+!scripts/context7-setup.sh
 !scripts/t3-pair.sh
 !scripts/workspace-entrypoint.sh
 !scripts/workspace-healthcheck.sh
@@ -17,3 +20,4 @@
 !versions/opencode.env
 !versions/t3.env
 !versions/docker.env
+!versions/gh.env

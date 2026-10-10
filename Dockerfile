@@ -39,6 +39,17 @@ COPY scripts/install-docker.sh versions/docker.env /tmp/docker-install/
 RUN sh /tmp/docker-install/install-docker.sh "$TARGETARCH" \
     && rm -rf /tmp/docker-install /var/lib/apt/lists/*
 
+COPY scripts/install-gh.sh versions/gh.env /tmp/gh-install/
+RUN sh /tmp/gh-install/install-gh.sh "$TARGETARCH" \
+    && rm -rf /tmp/gh-install
+
+COPY --chmod=0755 scripts/agent-cli.sh /usr/local/lib/agent-container/agent-cli
+# Replace only the installer-created links; preserve both native executables.
+RUN rm /usr/local/bin/codex /usr/local/bin/opencode \
+    && ln -s /usr/local/lib/agent-container/agent-cli /usr/local/bin/codex \
+    && ln -s /usr/local/lib/agent-container/agent-cli /usr/local/bin/opencode
+COPY --chmod=0755 scripts/context7-setup.sh /usr/local/bin/context7-setup
+
 COPY config/docker-daemon.json /etc/docker/daemon.json
 COPY --chmod=0755 scripts/t3-pair.sh /usr/local/bin/t3-pair
 COPY --chmod=0755 scripts/workspace-entrypoint.sh /usr/local/bin/workspace-entrypoint
@@ -51,6 +62,7 @@ RUN useradd --create-home --uid 1000 --shell /bin/bash agent \
     && printf 'agent ALL=(ALL) NOPASSWD: ALL\n' > /etc/sudoers.d/agent \
     && chmod 0440 /etc/sudoers.d/agent \
     && install -d -o agent -g agent /workspace \
+        /home/agent/.config \
         /home/agent/.codex /home/agent/.t3 /home/agent/.docker \
         /home/agent/.config/opencode /home/agent/.local/share/opencode \
         /home/agent/.local/state/opencode /home/agent/.cache/opencode

@@ -28,6 +28,8 @@ curl --fail --silent --show-error --location --retry 3 \
     "$release_url/opencode-$target.tar.gz" --output "$archive"
 printf '%s  %s\n' "$checksum" "$archive" | sha256sum --check --strict
 tar -xzf "$archive" -C "$download_dir"
-install -m 0755 "$download_dir/opencode" /usr/local/bin/opencode
+install -d /opt/opencode
+install -m 0755 "$download_dir/opencode" /opt/opencode/opencode
+ln -s /opt/opencode/opencode /usr/local/bin/opencode
 
 test "$(opencode --version)" = "$OPENCODE_VERSION"
