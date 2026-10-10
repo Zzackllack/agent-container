@@ -9,6 +9,7 @@
 !scripts/t3-pair.sh
 !scripts/workspace-entrypoint.sh
 !scripts/workspace-healthcheck.sh
+!scripts/workspace-instructions.sh
 !config/
 !config/docker-daemon.json
 !versions/

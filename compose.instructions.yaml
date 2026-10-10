@@ -1,0 +1,11 @@
+services:
+  workspace:
+    environment:
+      WORKSPACE_INSTRUCTIONS_ENABLED: "true"
+    volumes:
+      - type: bind
+        source: ${AGENT_INSTRUCTIONS_DIRECTORY:?Set AGENT_INSTRUCTIONS_DIRECTORY to the host sync published directory}
+        target: /etc/agent-instructions
+        read_only: true
+        bind:
+          create_host_path: false
