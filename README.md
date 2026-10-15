@@ -1,19 +1,24 @@
 # agent-container
 
-<img align="right" src="assets/logo.png" width="160" height="160" alt="agent-container logo" />
-
-A containerized development workspace for AI coding agents, with Codex CLI,
+<table>
+<tr>
+<td valign="top">
+<p>A containerized development workspace for AI coding agents, with Codex CLI,
 OpenCode, and T3 Code's web interface. Run it locally with Docker or keep it
 available on a Linux server, with tools and configuration maintained in one
-rebuildable image.
+rebuildable image.</p>
 
-**Status:** the Debian 13 image includes Codex, OpenCode v2, and T3 Code nightly.
+<p><strong>Status:</strong> the Debian 13 image includes Codex, OpenCode v2, and T3 Code nightly.
 Compose starts T3's web server with persistent storage and a configurable host
 port. An opt-in Sysbox configuration starts an internal Docker daemon for image
 builds and container-based tests. Nested builds, Compose networking, persistence,
-and Codex sandboxed Docker commands have been verified on a Linux Sysbox host.
-
-<br clear="right" />
+and Codex sandboxed Docker commands have been verified on a Linux Sysbox host.</p>
+</td>
+<td width="200" align="center" valign="top">
+<img src="assets/logo.png" width="160" height="160" alt="agent-container logo" />
+</td>
+</tr>
+</table>
 
 ## Build and use
 
