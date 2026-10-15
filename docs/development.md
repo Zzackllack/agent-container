@@ -96,6 +96,9 @@ docker run --rm --init --user 0:0 \
   agent-container:check bash /tests/tests/workspace-entrypoint.sh
 docker run --rm --init --user 0:0 \
   --mount "type=bind,source=$PWD,target=/tests,readonly" \
+  agent-container:check bash /tests/tests/agent-cli.sh
+docker run --rm --init --user 0:0 \
+  --mount "type=bind,source=$PWD,target=/tests,readonly" \
   agent-container:check bash /tests/tests/sync-instructions.sh
 bash tests/workspace-instructions.sh agent-container:check
 docker run --rm --init \

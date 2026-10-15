@@ -1,6 +1,12 @@
 #!/bin/sh
 set -eu
 
+# Sysbox starts as root for dockerd; Docker exec inherits that user too. Keep
+# interactive logins in the same account as T3, with readable private auth files.
+if [ "$(id -u)" = 0 ]; then
+    exec setpriv --reuid=agent --regid=agent --init-groups -- "$0" "$@"
+fi
+
 # Each new CLI process reads the persisted key, including T3's provider children
 # and compose exec shells. No startup-only environment export is needed.
 key_file=${XDG_CONFIG_HOME:-$HOME/.config}/agent-container/context7.key

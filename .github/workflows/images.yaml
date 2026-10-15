@@ -80,7 +80,7 @@ jobs:
         run: |
           docker run --rm --init agent-container:test sh -ec \
             'sudo -n true; command -v apt-get; codex --version; opencode --version; t3 --version; gh --version; docker --version; docker compose version; docker buildx version; sudo dockerd --validate'
-          for test in workspace-entrypoint sync-instructions; do
+          for test in workspace-entrypoint agent-cli sync-instructions; do
             docker run --rm --init --user 0:0 \
               --mount "type=bind,source=$PWD,target=/tests,readonly" \
               agent-container:test bash "/tests/tests/$test.sh"

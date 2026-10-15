@@ -83,6 +83,26 @@ Codex state is stored under `/home/agent/.codex` in the home volume. Login happe
 at runtime; no credentials are included in the image or build context. T3 provides
 the web interface for the installed CLIs; the Codex desktop app is not included.
 
+The Codex/OpenCode launchers switch from root to `agent` when invoked through
+Sysbox's default root exec user. Continue using `--user agent` for shells, GitHub
+CLI, and other interactive commands. Do not call `/opt/codex/bin/codex` directly
+as root: its private files would become unreadable to the agent processes.
+
+### Permission denied during login
+
+If an older image or a root shell created Codex state as root, repair only the
+root-owned entries inside its persistent directory, without following symlinks:
+
+```sh
+docker compose exec --user root workspace sh -ec \
+  'find /home/agent/.codex -xdev -uid 0 -exec chown -h agent:agent {} +'
+docker compose exec --user agent workspace codex login status
+```
+
+This keeps credential permissions private and preserves sessions and existing
+login. If status reports no login afterward, run `codex login --device-auth`
+as `agent`. Do not make `auth.json` world-readable or paste its contents into logs.
+
 The container boundary and Codex's own command sandbox are separate. This image
 does not configure a Codex sandbox bypass. On the tested Ubuntu Sysbox host,
 Codex required an executable-specific AppArmor exception. Docker commands also
