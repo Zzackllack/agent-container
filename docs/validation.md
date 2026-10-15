@@ -4,6 +4,18 @@ Historical results below describe particular images and hosts, not a guarantee
 for the currently deployed nightly. To reproduce relevant checks, see the
 [development guide](development.md#verification).
 
+## Published images (2026-10-15)
+
+The [first publishing run](https://github.com/Zzackllack/agent-container/actions/runs/38738978164)
+passed native amd64 and arm64 builds for the workspace and dashboard, including
+workspace tool/lifecycle checks, fake-key Context7 tests, and dashboard volume
+recreation. Both multi-platform images were published with the shared tag
+`build-38738978164-1` and `latest`. Anonymous GHCR requests verified both platform
+manifests. See [published images](images.md) for pull-based operation.
+This does not add live Sysbox, provider login, or native-client evidence.
+
+## Earlier workspace and Sysbox baseline
+
 The nightly/OpenCode v2 transition has separate checks in
 [the update guide](updates.md#validation). Results below describe the earlier
 stable image and Sysbox baseline; they do not prove every later nightly works.

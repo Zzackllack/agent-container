@@ -66,11 +66,12 @@ See [nightly updates](updates.md) and [persistent storage](storage.md).
 
 ## Package visibility
 
-GHCR package visibility is separate from repository visibility. On first
-publication, the package owner must make each package public in its GitHub
-package settings before anonymous pulls work. Subsequent workflow pushes retain
-that visibility. Forks publish under their own lowercased owner namespace;
-their Compose image overrides need to point to that namespace.
+GHCR package visibility is separate from repository visibility. The workflow
+links each image to its source repository; check the first publication's package
+settings and verify anonymous pulls. This repository's packages inherited public
+access. If a fork's package remains private, its owner can change that in package
+settings. Subsequent pushes retain visibility. Forks publish under their own
+lowercased owner namespace; their Compose overrides need to point there.
 
 CI verifies the workspace tools, mock-daemon lifecycle, Git instruction sync,
 Context7 configuration with fake credentials, and dashboard recreation. These
