@@ -11,6 +11,7 @@
 !scripts/install-uv.sh
 !scripts/install-go.sh
 !scripts/install-rust.sh
+!scripts/install-maven.sh
 !scripts/agent-cli.sh
 !scripts/context7-setup.sh
 !scripts/t3-runtime.sh
@@ -28,6 +29,8 @@
 !versions/uv.env
 !versions/go.env
 !versions/rust.env
+!versions/java.env
+!versions/maven.env
 !dashboard/
 !dashboard/Dockerfile
 !dashboard/package.json

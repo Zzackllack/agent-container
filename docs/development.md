@@ -39,12 +39,18 @@ runtime responsibilities. Read the relevant guide before changing one:
 - Install APT packages with `--no-install-recommends` and remove package lists in
   the same layer. Add new `COPY` inputs to the `.dockerignore` allowlist; keep
   credentials and workspace files out of the build context.
-- Language toolchains (Node.js, uv, Go, Rust) are image-managed under `/opt` and
-  `/usr/local`, with versions and per-architecture hashes in `versions/`. Keep
-  caches that agents write to (`GOPATH`, pnpm store, uv, `~/.cargo`) in the home
-  volume instead of the image, and leave `CARGO_HOME` unset. Debian names some
-  binaries differently upstream (`fdfind`, `batcat`); add the expected alias in
-  the Dockerfile and assert it in `tests/toolchain.sh`.
+- Language toolchains (Node.js, uv, Go, Rust, Java, Maven) are image-managed
+  under `/opt` and `/usr/local`, with versions and per-architecture hashes in
+  `versions/`. Java is the exception to the checksum rule: it uses the Debian
+  OpenJDK package because Debian ships the current LTS release. Keep caches that
+  agents write to (`GOPATH`, pnpm store, uv, `~/.cargo`, Maven's `~/.m2`) in the
+  home volume instead of the image, and leave `CARGO_HOME` unset. Debian names
+  some binaries differently upstream (`fdfind`, `batcat`); add the expected alias
+  in the Dockerfile and assert it in `tests/toolchain.sh`.
+- The heaviest toolchains (Go, Rust, Java with Maven) sit behind `WITH_GO`,
+  `WITH_RUST`, and `WITH_JAVA` build arguments that default to `1`. Keep that
+  pattern for new multi-hundred-megabyte additions, and keep
+  `tests/toolchain.sh` skipping them only when the binary is really absent.
 
 ## Runtime constraints
 

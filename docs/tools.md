@@ -15,33 +15,50 @@ versions against those pins.
 | uv (`uvx`) | **0.13.1** | Astral release archive, SHA-256 pinned |
 | Go | **1.27.2** | `go.dev` tarball, SHA-256 pinned |
 | Rust (rustc, cargo, rustfmt, clippy) | **1.99.1** | rustup with an image-managed toolchain |
+| Java (OpenJDK) | **25** LTS (`25.0.4.1`) | Debian 13 (`openjdk-25-jdk`) |
+| Maven | **3.10.0** | Apache release tarball, SHA-512 pinned |
 | GitHub CLI | **2.102.0** | checksum-pinned release package |
 | Python | **3.13.5** | Debian 13 (`python3`, `python3-venv`, `python3-dev`) |
 | Docker Engine/CLI, containerd, Buildx, Compose | **29.9.1**, **2.4.2**, **0.38.0**, **5.6.0** | Docker's signed Debian repository |
 
-Node.js lives in `/opt/node`, Go in `/usr/local/go`, and the Rust toolchain in
-`/opt/rustup`; those trees are root-owned and stay image-managed, like Codex,
-OpenCode, GitHub CLI, and Docker. `CARGO_HOME` is intentionally **not** set, so
+Node.js lives in `/opt/node`, Go in `/usr/local/go`, Maven in `/opt/maven`, and
+the Rust toolchain in `/opt/rustup`; those trees are root-owned and stay
+image-managed, like Codex, OpenCode, GitHub CLI, and Docker. `JAVA_HOME` is
+`/opt/java`, a symlink to the Debian JDK, so tooling never has to name the
+architecture. `CARGO_HOME` is intentionally **not** set, so
 `cargo install` and the cargo registry cache land in `~/.cargo` inside the home
-volume. Node package caches, the pnpm store, uv's cache, and `GOPATH` follow the
-same rule. Use `sudo npm install --global ...` for global npm packages, or pnpm
-for unprivileged project-local installs.
+volume. Node package caches, the pnpm store, uv's cache, `GOPATH`, and Maven's
+`~/.m2` follow the same rule. Use `sudo npm install --global ...` for global npm
+packages, or pnpm for unprivileged project-local installs.
 
 uv manages its own Python builds in the home volume (`uv python install
 3.13`), so projects needing a specific interpreter do not need `sudo`.
 
+Java comes from the Debian repository rather than an upstream archive: trixie's
+`openjdk-25-jdk` is the same 25.0.4.1 upstream release as current Eclipse
+Temurin, and Debian security updates keep the patch level current. It is a full
+JDK, so `javac`, JShell, and Swing will not surprise you. Gradle is
+deliberately absent: Gradle projects ship a `./gradlew` wrapper, which downloads
+its own distribution on first use.
+
 ### Image size
 
-The default workspace image is about 3.6 GB, and Node.js (~270 MB), Go
-(~280 MB) and the Rust toolchain (~620 MB) are the largest new pieces. Go and
-Rust are the easiest to leave out:
+The default workspace image is about 4.0 GB. The heavy additions are the Rust
+toolchain (~620 MB), Java with Maven (~420 MB), Go (~280 MB) and Node.js
+(~270 MB); the rest is Debian, Docker, and the agent CLIs. The three language
+toolchains are optional at build time:
 
 ```sh
-docker build --build-arg WITH_GO=0 --build-arg WITH_RUST=0 -t agent-container:slim .
+# Go, Rust, and Java with Maven left out: about 2.7 GB
+docker build --build-arg WITH_GO=0 --build-arg WITH_RUST=0 --build-arg WITH_JAVA=0 \
+  -t agent-container:slim .
+
+# Java alone left out: about 3.6 GB
+docker build --build-arg WITH_JAVA=0 -t agent-container:no-java .
 ```
 
-That variant is roughly 2.7 GB and keeps every other tool. Published tags always
-build the default variant.
+Everything else stays, and `tests/toolchain.sh` reports a missing toolchain as
+skipped instead of failing. Published tags always build the default variant.
 
 ## Preinstalled utilities
 
@@ -67,6 +84,7 @@ Dockerfile and pin their versions in `versions/`.
 
 Deliberately **not** preinstalled, to keep the image and its pull time smaller:
 other JavaScript runtimes (bun, Deno — `npm install --global bun` works),
+Gradle (the `./gradlew` wrapper downloads its own distribution), Android SDKs,
 cloud provider CLIs (aws, gcloud, az), Playwright/Puppeteer browser downloads,
 prebuilt CPython toolchains (uv handles those), and IDEs. The dashboard's Node
 runtime belongs to its separate image.

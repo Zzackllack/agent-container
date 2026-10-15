@@ -17,6 +17,8 @@ load_versions node.env
 load_versions uv.env
 load_versions go.env
 load_versions rust.env
+load_versions java.env
+load_versions maven.env
 
 check() {
     local description=$1 expected=$2 actual
@@ -58,10 +60,47 @@ optional go "go" "go version go$GO_VERSION linux/$(dpkg --print-architecture)" g
 optional rustc "rustc" "rustc $RUST_TOOLCHAIN_VERSION" bash -c 'rustc --version | cut -d" " -f1,2'
 optional cargo "cargo" "cargo $RUST_TOOLCHAIN_VERSION" bash -c 'cargo --version | cut -d" " -f1,2'
 
+# Java ships as a Debian package, so only the LTS major is pinned; Debian moves
+# the patch version inside that major.
+if command -v java >/dev/null; then
+    java_line=$(java -version 2>&1 | head -1)
+    case $java_line in
+        "openjdk version \"$JAVA_MAJOR_VERSION."*) ;;
+        *)
+            echo "FAIL java: expected major $JAVA_MAJOR_VERSION, got '$java_line'" >&2
+            exit 1
+            ;;
+    esac
+    printf 'ok   %-28s %s\n' java "$java_line"
+    javac_line=$(javac -version 2>&1)
+    case $javac_line in
+        "javac $JAVA_MAJOR_VERSION."*) ;;
+        *)
+            echo "FAIL javac: expected major $JAVA_MAJOR_VERSION, got '$javac_line'" >&2
+            exit 1
+            ;;
+    esac
+    printf 'ok   %-28s %s\n' javac "$javac_line"
+    if [[ $JAVA_HOME != /opt/java || ! -x $JAVA_HOME/bin/javac ]]; then
+        echo "FAIL JAVA_HOME does not point at the JDK: ${JAVA_HOME:-unset}" >&2
+        exit 1
+    fi
+    printf 'ok   %-28s %s\n' JAVA_HOME "$JAVA_HOME"
+else
+    printf 'skip %-28s not installed in this image\n' java
+fi
+optional mvn maven "Apache Maven $MAVEN_VERSION" bash -c 'mvn --version | head -1 | cut -d" " -f1,2,3'
+if command -v mvn >/dev/null; then
+    # No absolute localRepository in the configuration: maven keeps its cache in
+    # ~/.m2, inside the home volume, like the other package caches.
+    ! grep -qE '^[[:space:]]*<localRepository>' /opt/maven/conf/settings.xml
+    printf 'ok   %-28s %s\n' "maven cache" "~/.m2 inside the home volume"
+fi
+
 for tool in fd bat delta direnv fzf git gh jq just less nano pnpm protoc psql python3 rg rsync shellcheck sqlite3 sudo tmux tree uv uvx wget xz zoxide zstd node npm npx; do
     present "$tool"
 done
-for tool in cargo go rustc rustfmt cargo-clippy; do
+for tool in cargo go rustc rustfmt cargo-clippy java javac mvn; do
     command -v "$tool" >/dev/null && present "$tool"
 done
 # Debian ships fd as fdfind and bat as batcat; the image adds the upstream names.
@@ -69,7 +108,7 @@ test "$(readlink -f "$(command -v fd)")" = "$(readlink -f /usr/bin/fdfind)"
 test "$(readlink -f "$(command -v bat)")" = "$(readlink -f /usr/bin/batcat)"
 
 # Image-managed toolchains stay root-owned, like Codex, OpenCode, gh and Docker.
-for tree in /opt/node /opt/rustup /opt/cargo /usr/local/go; do
+for tree in /opt/node /opt/rustup /opt/cargo /usr/local/go /opt/java /opt/maven; do
     [[ -e $tree ]] || continue
     if [[ -w $tree ]]; then
         echo "FAIL $tree is writable by $(id -un); versions must stay image-managed" >&2

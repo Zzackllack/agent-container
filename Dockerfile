@@ -75,6 +75,25 @@ RUN apt-get update \
 RUN ln -s /usr/bin/fdfind /usr/local/bin/fd \
     && ln -s /usr/bin/batcat /usr/local/bin/bat
 
+# Java uses the Debian OpenJDK 25 package: trixie ships the same upstream release
+# as current Temurin, so no third-party archive is needed. /opt/java is a stable
+# JAVA_HOME symlink that does not name the architecture. Roughly 0.4 GB together
+# with Maven; --build-arg WITH_JAVA=0 leaves both out.
+ARG WITH_JAVA=1
+RUN if [ "$WITH_JAVA" = 1 ]; then \
+        apt-get update \
+        && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends openjdk-25-jdk \
+        && rm -rf /var/lib/apt/lists/* \
+        && ln -s "$(dirname "$(dirname "$(readlink -f "$(command -v javac)")")")" /opt/java; \
+    fi
+
+COPY scripts/install-maven.sh versions/maven.env /tmp/maven-install/
+# Maven is useless without a JDK, so it shares the WITH_JAVA flag.
+RUN if [ "$WITH_JAVA" = 1 ]; then \
+        sh /tmp/maven-install/install-maven.sh; \
+    fi \
+    && rm -rf /tmp/maven-install
+
 ARG TARGETARCH
 COPY scripts/install-codex.sh versions/codex.env /tmp/codex-install/
 RUN sh /tmp/codex-install/install-codex.sh "$TARGETARCH" \
@@ -161,7 +180,8 @@ ENV HOME=/home/agent \
     DOCKER_HOST=unix:///var/run/docker.sock \
     WORKSPACE_DOCKER_ENABLED=false \
     RUSTUP_HOME=/opt/rustup \
-    PATH=/opt/node/bin:/usr/local/go/bin:/opt/cargo/bin:$PATH
+    JAVA_HOME=/opt/java \
+    PATH=/opt/java/bin:/opt/maven/bin:/opt/node/bin:/usr/local/go/bin:/opt/cargo/bin:$PATH
 
 USER agent
 WORKDIR /workspace
