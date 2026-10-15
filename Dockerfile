@@ -1,26 +1,79 @@
 FROM debian:trixie-slim
 
+# Baseline utilities plus the developer tooling agents reach for constantly.
+# Everything here comes from the signed Debian 13 repository; the
+# checksum-pinned toolchains install further down. The headless browser
+# libraries let Playwright/Puppeteer launch Chromium without extra setup, while
+# the browsers themselves stay a per-project install.
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         bash \
+        bat \
         build-essential \
+        bzip2 \
         ca-certificates \
+        cmake \
         curl \
+        direnv \
         dnsutils \
+        fd-find \
+        fontconfig \
+        fonts-dejavu-core \
+        fonts-liberation \
+        fzf \
         git \
+        git-delta \
+        git-lfs \
+        htop \
         iproute2 \
         iputils-ping \
         jq \
+        just \
         less \
+        libasound2t64 \
+        libatk-bridge2.0-0t64 \
+        libatk1.0-0t64 \
+        libcairo2 \
+        libcups2t64 \
+        libdrm2 \
+        libgbm1 \
+        libnss3 \
+        libpango-1.0-0 \
+        libssl-dev \
+        libxcomposite1 \
+        libxdamage1 \
+        libxfixes3 \
+        libxkbcommon0 \
+        libxrandr2 \
         nano \
         openssh-client \
+        openssl \
+        pkg-config \
+        postgresql-client \
         procps \
+        protobuf-compiler \
+        python3 \
+        python3-dev \
+        python3-venv \
         ripgrep \
+        rsync \
+        shellcheck \
+        sqlite3 \
         sudo \
+        tmux \
+        tree \
         unzip \
+        wget \
+        xvfb \
         xz-utils \
         zip \
+        zoxide \
+        zstd \
     && rm -rf /var/lib/apt/lists/*
+
+# Debian ships fd as fdfind and bat as batcat; agents expect the upstream names.
+RUN ln -s /usr/bin/fdfind /usr/local/bin/fd \
+    && ln -s /usr/bin/batcat /usr/local/bin/bat
 
 ARG TARGETARCH
 COPY scripts/install-codex.sh versions/codex.env /tmp/codex-install/
@@ -38,6 +91,31 @@ RUN sh /tmp/docker-install/install-docker.sh "$TARGETARCH" \
 COPY scripts/install-gh.sh versions/gh.env /tmp/gh-install/
 RUN sh /tmp/gh-install/install-gh.sh "$TARGETARCH" \
     && rm -rf /tmp/gh-install
+
+COPY scripts/install-node.sh versions/node.env /tmp/node-install/
+RUN sh /tmp/node-install/install-node.sh "$TARGETARCH" \
+    && rm -rf /tmp/node-install
+
+COPY scripts/install-uv.sh versions/uv.env /tmp/uv-install/
+RUN sh /tmp/uv-install/install-uv.sh "$TARGETARCH" \
+    && rm -rf /tmp/uv-install
+
+COPY scripts/install-go.sh versions/go.env /tmp/go-install/
+# Go and Rust are the two heaviest additions (~0.3 GB and ~0.6 GB installed) and
+# are on by default. Build with --build-arg WITH_GO=0 --build-arg WITH_RUST=0
+# for a smaller workspace image; every other tool stays.
+ARG WITH_GO=1
+RUN if [ "$WITH_GO" = 1 ]; then \
+        sh /tmp/go-install/install-go.sh "$TARGETARCH"; \
+    fi \
+    && rm -rf /tmp/go-install
+
+COPY scripts/install-rust.sh versions/rust.env /tmp/rust-install/
+ARG WITH_RUST=1
+RUN if [ "$WITH_RUST" = 1 ]; then \
+        sh /tmp/rust-install/install-rust.sh "$TARGETARCH"; \
+    fi \
+    && rm -rf /tmp/rust-install
 
 COPY scripts/install-t3.sh /tmp/t3-install/
 # Change this build arg to refresh the nightly lookup without rebuilding tools.
@@ -81,7 +159,9 @@ ENV HOME=/home/agent \
     T3CODE_NO_BROWSER=true \
     OPENCODE_DISABLE_AUTOUPDATE=true \
     DOCKER_HOST=unix:///var/run/docker.sock \
-    WORKSPACE_DOCKER_ENABLED=false
+    WORKSPACE_DOCKER_ENABLED=false \
+    RUSTUP_HOME=/opt/rustup \
+    PATH=/opt/node/bin:/usr/local/go/bin:/opt/cargo/bin:$PATH
 
 USER agent
 WORKDIR /workspace

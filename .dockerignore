@@ -7,6 +7,10 @@
 !scripts/install-t3.sh
 !scripts/install-docker.sh
 !scripts/install-gh.sh
+!scripts/install-node.sh
+!scripts/install-uv.sh
+!scripts/install-go.sh
+!scripts/install-rust.sh
 !scripts/agent-cli.sh
 !scripts/context7-setup.sh
 !scripts/t3-runtime.sh
@@ -20,6 +24,10 @@
 !versions/opencode.env
 !versions/docker.env
 !versions/gh.env
+!versions/node.env
+!versions/uv.env
+!versions/go.env
+!versions/rust.env
 !dashboard/
 !dashboard/Dockerfile
 !dashboard/package.json

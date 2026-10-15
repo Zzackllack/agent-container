@@ -1,23 +1,75 @@
 # Tools and provider setup
 
 The image uses `debian:trixie-slim` (Debian 13) and supports Linux amd64 and arm64.
-It includes Git, curl, CA certificates, SSH client, jq, ripgrep, less, nano,
-process/network tools, archive utilities, and a basic C/C++ build toolchain.
-GitHub CLI **2.102.0** is also installed from checksum-pinned upstream packages.
-APT is supplied by Debian; install extra packages with `sudo apt-get update` and
-`sudo apt-get install ...`. Package changes made inside a container disappear
-when that container is removed; add lasting tools to the Dockerfile.
+It is meant to be usable without a setup step: an agent should be able to open a
+shell and build most projects it is handed. Everything below is image-managed
+and version-pinned in `versions/`; `tests/toolchain.sh` checks the installed
+versions against those pins.
 
-For example, an agent can run `sudo apt-get update` followed by
-`sudo apt-get install -y python3 python3-venv`. The `agent` user has passwordless
-sudo. Language-specific tools such as pnpm and uv are not preinstalled in the
-workspace; install those when needed or extend the workspace image for repeatable
-project toolchains. The dashboard's Node runtime belongs to its separate image.
+## Preinstalled toolchains
 
-Docker Engine/CLI **29.8.2**, containerd **2.3.6**, Buildx **0.37.1**, and Compose
-**5.6.0** are installed from Docker's signed Debian repository with exact package
-versions in `versions/docker.env`. The repository signing key is checksum-pinned.
-These are the tools inside the workspace; the host can use a different version.
+| Tool | Version | Source |
+| --- | --- | --- |
+| Node.js | **24.22.0** (LTS) | `nodejs.org` tarball, SHA-256 pinned |
+| pnpm / yarn | **12.11.2** / **1.22.22** | npm registry (integrity-checked) |
+| uv (`uvx`) | **0.13.1** | Astral release archive, SHA-256 pinned |
+| Go | **1.27.2** | `go.dev` tarball, SHA-256 pinned |
+| Rust (rustc, cargo, rustfmt, clippy) | **1.99.1** | rustup with an image-managed toolchain |
+| GitHub CLI | **2.102.0** | checksum-pinned release package |
+| Python | **3.13.5** | Debian 13 (`python3`, `python3-venv`, `python3-dev`) |
+| Docker Engine/CLI, containerd, Buildx, Compose | **29.9.1**, **2.4.2**, **0.38.0**, **5.6.0** | Docker's signed Debian repository |
+
+Node.js lives in `/opt/node`, Go in `/usr/local/go`, and the Rust toolchain in
+`/opt/rustup`; those trees are root-owned and stay image-managed, like Codex,
+OpenCode, GitHub CLI, and Docker. `CARGO_HOME` is intentionally **not** set, so
+`cargo install` and the cargo registry cache land in `~/.cargo` inside the home
+volume. Node package caches, the pnpm store, uv's cache, and `GOPATH` follow the
+same rule. Use `sudo npm install --global ...` for global npm packages, or pnpm
+for unprivileged project-local installs.
+
+uv manages its own Python builds in the home volume (`uv python install
+3.13`), so projects needing a specific interpreter do not need `sudo`.
+
+### Image size
+
+The default workspace image is about 3.6 GB, and Node.js (~270 MB), Go
+(~280 MB) and the Rust toolchain (~620 MB) are the largest new pieces. Go and
+Rust are the easiest to leave out:
+
+```sh
+docker build --build-arg WITH_GO=0 --build-arg WITH_RUST=0 -t agent-container:slim .
+```
+
+That variant is roughly 2.7 GB and keeps every other tool. Published tags always
+build the default variant.
+
+## Preinstalled utilities
+
+- **Search and navigation:** ripgrep, `fd`, bat, fzf, tree, `delta` (via
+  `git config --global core.pagerDelta true` if you want it by default), less
+- **Shell and terminal:** bash, zsh-free POSIX shell, tmux, `just`, zoxide,
+  direnv
+- **Files and transfer:** curl, wget, rsync, git-lfs, unzip/zip, xz, zstd, bzip2
+- **Build:** build-essential, cmake, pkg-config, libssl-dev, protobuf-compiler
+- **Data:** sqlite3, postgresql-client, jq
+- **Diagnostics:** shellcheck, htop, process and network tools, openssl
+- **Headless browsers:** the shared libraries Chromium needs (`libnss3`, `libgbm1`,
+  `libasound2`, ATK, cups, X11 bits) plus `fontconfig`, DejaVu, Liberation fonts
+  and Xvfb. Playwright or Puppeteer can then launch a browser after downloading
+  its own browser build; the browsers themselves are not baked in.
+
+Debian ships `fd` as `fdfind` and `bat` as `batcat`; the image adds the upstream
+names in `/usr/local/bin`. GitHub CLI is installed from a checksum-pinned
+upstream package. APT is supplied by Debian: install anything else with
+`sudo apt-get update && sudo apt-get install ...`. Package changes made inside a
+container disappear when that container is removed; add lasting tools to the
+Dockerfile and pin their versions in `versions/`.
+
+Deliberately **not** preinstalled, to keep the image and its pull time smaller:
+other JavaScript runtimes (bun, Deno — `npm install --global bun` works),
+cloud provider CLIs (aws, gcloud, az), Playwright/Puppeteer browser downloads,
+prebuilt CPython toolchains (uv handles those), and IDEs. The dashboard's Node
+runtime belongs to its separate image.
 
 ## OpenCode and T3 Code
 
@@ -57,7 +109,7 @@ installations under `/opt` and `/usr/local/bin` remain root-owned; do not use
 
 ## Codex CLI
 
-Codex **0.161.0** is installed from the official native Linux package, including
+Codex **0.162.1** is installed from the official native Linux package, including
 its helper binaries. Node.js is not required for this installation. The version
 and SHA-256 hashes for both architectures are pinned in `versions/codex.env`;
 downloads are verified during the build. To upgrade, update all three values

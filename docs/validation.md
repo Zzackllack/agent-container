@@ -4,6 +4,24 @@ Historical results below describe particular images and hosts, not a guarantee
 for the currently deployed nightly. To reproduce relevant checks, see the
 [development guide](development.md#verification).
 
+## Preinstalled toolchains (2026-10-15)
+
+The workspace image gained Node.js 24.22.0 with pnpm and yarn, uv 0.13.1, Go
+1.27.2, and a Rust 1.99.1 toolchain, plus Debian developer utilities and headless
+browser libraries. A native amd64 build passed `docker build --check`, the
+workspace tool/lifecycle command, `tests/toolchain.sh` (installed versions
+against the pins, root-owned toolchain trees, caches inside the home volume, and
+a working `python3 -m venv`), the entrypoint, agent CLI, Git instruction sync,
+`uv run tests/t3-update.py`, and fake-key Context7 tests. Chromium from a
+Playwright cache mounted read-only launched headless and wrote a screenshot inside
+the container, with fontconfig resolving DejaVu for sans and monospace.
+
+Not covered: an arm64 build of the new toolchains, Sysbox operation with the
+larger image, and authenticated agent tasks. Docker's build checks reported no
+warnings. The default image is 3.59 GB against a 1.84 GB baseline; the
+`WITH_GO=0 --build-arg WITH_RUST=0` variant built to 2.68 GB and passed the same
+toolchain check with Go and Rust reported as skipped.
+
 ## Root-exec authentication repair and instruction cleanup (2026-10-15)
 
 A follow-up found existing root-owned OpenCode logs/state and root-owned XDG

@@ -39,6 +39,12 @@ runtime responsibilities. Read the relevant guide before changing one:
 - Install APT packages with `--no-install-recommends` and remove package lists in
   the same layer. Add new `COPY` inputs to the `.dockerignore` allowlist; keep
   credentials and workspace files out of the build context.
+- Language toolchains (Node.js, uv, Go, Rust) are image-managed under `/opt` and
+  `/usr/local`, with versions and per-architecture hashes in `versions/`. Keep
+  caches that agents write to (`GOPATH`, pnpm store, uv, `~/.cargo`) in the home
+  volume instead of the image, and leave `CARGO_HOME` unset. Debian names some
+  binaries differently upstream (`fdfind`, `batcat`); add the expected alias in
+  the Dockerfile and assert it in `tests/toolchain.sh`.
 
 ## Runtime constraints
 
@@ -89,6 +95,9 @@ docker build --check .
 docker build -t agent-container:check .
 docker run --rm --init agent-container:check sh -ec \
   'codex --version; opencode --version; t3 --version; gh --version; docker --version; docker compose version; docker buildx version; sudo dockerd --validate'
+docker run --rm --init \
+  --mount "type=bind,source=$PWD,target=/tests,readonly" \
+  agent-container:check bash /tests/tests/toolchain.sh
 docker run --rm --init --user 0:0 \
   --mount "type=bind,source=$PWD,target=/tests,readonly" \
   agent-container:check bash /tests/tests/workspace-entrypoint.sh
