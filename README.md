@@ -114,6 +114,23 @@ Keep personal `AGENTS.md` preferences in a separate Git repository. The optional
 publishes a last-good copy, and mounts it read-only for Codex and OpenCode.
 Updates do not need an image rebuild; start a fresh agent session afterward.
 
+## Configuration dashboard
+
+Compose also starts a configuration dashboard at <http://localhost:3780>.
+Retrieve its initial login password with:
+
+```sh
+docker compose exec dashboard cat /var/lib/agent-dashboard/password
+```
+
+Edit Codex/OpenCode global instructions, project `AGENTS.md` files, and provider
+TOML/JSONC configuration with Markdown preview, a review diff, private backups,
+and stale-file conflict checks. Git-synchronized instructions stay read-only.
+Edits use the workspace's persistent volumes; dashboard login and backups live
+in the additional `dashboard-state` volume. T3 pairing remains separate.
+See the [dashboard guide](docs/dashboard.md) for access, supported paths,
+configuration validation, development, and verification limits.
+
 ## GitHub and Context7 setup
 
 GitHub CLI is ready to use after runtime login:

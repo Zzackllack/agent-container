@@ -47,6 +47,10 @@ assumptions about a particular VPN, or snapshots of a contributor's devices.
   `tests/nested-docker.sh`: real inner build/Compose checks on a Sysbox workspace.
 - `docs/sysbox.md`: host requirements, installation, operation, and verification.
 - `README.md`: setup, access methods, current limitations, and recorded validation.
+- `dashboard/`: React/Vite/TypeScript UI and Hono API, built as a separate image.
+  Use pnpm, keep file operations in the backend, and keep document IDs allowlisted.
+- `docs/dashboard.md`, `tests/dashboard.py`: dashboard operation and disposable
+  Docker persistence checks. Run `pnpm test` and `pnpm build` in `dashboard/`.
 
 ## Image and script changes
 
@@ -98,7 +102,12 @@ assumptions about a particular VPN, or snapshots of a contributor's devices.
   cron inside the workspace. Keep failed syncs from replacing the last-good file.
 - Do not commit `.env`, provider credentials, home-volume contents, or real
   pairing URLs. Mint grants through T3 and preserve the credential fragment when
-  rewriting an origin; do not implement a separate authentication mechanism.
+  rewriting an origin; do not replace T3's authentication mechanism.
+  The configuration dashboard has its own password/session, independent of T3.
+  Keep it loopback-bound by default and never use it to bypass T3 authorization.
+- Preserve Git-managed instruction links as read-only in the dashboard. Never
+  expose arbitrary home files, authentication stores, or command execution via
+  its API. Use private backups and revision checks before replacing local files.
 - Accept Context7 keys through a hidden prompt or stdin, never command arguments
   or logs. Keep the key, configs, and backups private; test only with fake keys.
   Avoid displaying raw provider config/debug output with resolved credentials.
