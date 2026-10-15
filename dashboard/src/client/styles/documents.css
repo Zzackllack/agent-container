@@ -1,0 +1,445 @@
+/* Documents page: file list, editor shell, file details, markdown preview. */
+
+.document-layout {
+  display: grid;
+  grid-template-columns: 212px minmax(0, 1fr) 196px;
+  align-items: start;
+  gap: 20px;
+}
+.file-pane {
+  padding-top: 2px;
+}
+.file-count {
+  color: var(--text-faint);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.file-group {
+  margin-top: 22px;
+}
+.file-group h2 {
+  color: var(--text-faint);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding-left: 9px;
+  margin-bottom: 7px;
+}
+.file-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 9px;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  text-align: left;
+  margin-bottom: 2px;
+  border: 1px solid transparent;
+}
+/* The agent mark stack is a span too, so the label needs its own hook —
+   a `.file-item > span` rule would hand flex: 1 to the marks as well. */
+.file-item-label {
+  flex: 1;
+  min-width: 0;
+}
+.file-item strong {
+  font-size: 12px;
+  display: block;
+  color: var(--text);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.file-item small {
+  color: var(--text-faint);
+  font-size: 10px;
+  display: block;
+  margin-top: 2px;
+}
+.file-item:hover {
+  background: var(--surface-hover);
+}
+.file-item.selected {
+  background: var(--surface);
+  border-color: var(--border);
+  box-shadow: var(--shadow-sm);
+}
+.file-item.selected strong {
+  color: var(--accent-text);
+}
+.file-item > svg {
+  color: var(--text-faint);
+  flex-shrink: 0;
+}
+.empty-list {
+  font-size: 12px;
+  color: var(--text-faint);
+  padding: 16px 8px;
+}
+
+/* ── Editor shell ──────────────────────────────────────────────────────── */
+
+.editor-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  min-width: 0;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+.editor-header {
+  padding: 12px 15px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 58px;
+}
+.editor-header > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  color: var(--text-faint);
+}
+.editor-header > div > span:first-of-type {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.editor-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+}
+.dirty-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--warning);
+  flex-shrink: 0;
+}
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+}
+.editor-body {
+  height: max(390px, calc(100dvh - 330px));
+  min-height: 390px;
+  overflow: auto;
+  border-top: 1px solid var(--border);
+}
+.editor-body > .cm-theme {
+  height: 100%;
+}
+.editor-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 15px;
+  font-size: 10px;
+  color: var(--text-faint);
+  border-top: 1px solid var(--border);
+  background: var(--surface-sunken);
+  gap: 10px;
+}
+.editor-footer > span {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.footer-divider {
+  height: 9px;
+  width: 1px;
+  background: var(--border-strong);
+}
+.editor-empty {
+  display: grid;
+  place-items: center;
+  min-height: 420px;
+  color: var(--text-faint);
+  font-size: 13px;
+  padding: 30px;
+}
+.readonly-note {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 11px;
+  color: var(--warning);
+  line-height: 1.6;
+  background: var(--warning-soft);
+  padding: 9px 15px;
+}
+.readonly-note svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ── File details ──────────────────────────────────────────────────────── */
+
+.details-pane {
+  padding: 14px 15px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.details-pane h2 {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+}
+.details-pane dt {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-faint);
+  margin: 16px 0 6px;
+}
+.details-pane dd {
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.agent-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.agent-tags span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  padding: 3px 8px 3px 4px;
+  border-radius: 20px;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+.path-detail {
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+  font-size: 10px !important;
+}
+.detail-note {
+  display: flex;
+  align-items: start;
+  gap: 4px;
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+}
+.detail-note svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.detail-note p,
+.detail-foot {
+  font-size: 11px;
+  line-height: 1.8;
+}
+.detail-foot {
+  color: var(--text-faint);
+  margin-top: 16px;
+}
+
+/* ── Markdown preview ──────────────────────────────────────────────────── */
+
+.markdown {
+  padding: 25px 32px 45px;
+  font-size: 13px;
+  line-height: 1.85;
+  color: var(--text-muted);
+  max-width: 80ch;
+}
+.markdown h1 {
+  font-size: 24px;
+  margin: 0 0 18px;
+  color: var(--text);
+}
+.markdown h2 {
+  font-size: 18px;
+  margin: 26px 0 12px;
+  color: var(--text);
+}
+.markdown h3 {
+  font-size: 15px;
+  margin: 20px 0 10px;
+  color: var(--text);
+}
+.markdown p {
+  margin: 12px 0;
+}
+.markdown ul,
+.markdown ol {
+  padding-left: 21px;
+  list-style: revert;
+}
+.markdown a {
+  color: var(--accent-text);
+  text-decoration: underline;
+}
+.markdown pre {
+  padding: 15px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: auto;
+  font-size: 11px;
+}
+.markdown :not(pre) > code {
+  background: var(--surface-sunken);
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+.markdown blockquote {
+  border-left: 3px solid var(--border-strong);
+  padding-left: 15px;
+  margin: 20px 0;
+  color: var(--text-faint);
+}
+.markdown table {
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.markdown td,
+.markdown th {
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+}
+.image-placeholder {
+  display: inline-block;
+  padding: 1px 7px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 5px;
+  background: var(--surface-sunken);
+  color: var(--text-faint);
+  font-size: 11px;
+}
+
+@media (min-width: 1600px) {
+  .document-layout {
+    grid-template-columns: 232px minmax(0, 1fr) 220px;
+    gap: 26px;
+  }
+}
+
+@media (max-width: 1250px) {
+  .details-pane {
+    display: none;
+  }
+  .document-layout {
+    grid-template-columns: 196px minmax(0, 1fr);
+    gap: 16px;
+  }
+}
+
+@media (max-width: 800px) {
+  .document-layout {
+    grid-template-columns: 158px minmax(0, 1fr);
+    gap: 12px;
+  }
+  .file-item {
+    gap: 7px;
+    padding-inline: 6px;
+  }
+  .file-item strong {
+    font-size: 11px;
+  }
+  .file-item small {
+    font-size: 9px;
+  }
+  .editor-header {
+    padding: 9px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .editor-header > div:first-child {
+    width: 100%;
+  }
+  .editor-header-actions {
+    margin-left: auto;
+  }
+  .editor-body {
+    height: calc(100dvh - 340px);
+  }
+  .editor-toolbar {
+    padding-inline: 9px;
+    flex-wrap: wrap;
+  }
+  .editor-footer {
+    padding: 8px;
+    flex-wrap: wrap;
+  }
+  .markdown {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .document-layout {
+    display: flex;
+    flex-direction: column;
+  }
+  .file-pane {
+    width: 100%;
+    display: flex;
+    gap: 10px;
+    overflow: auto;
+    align-items: start;
+    padding-bottom: 6px;
+  }
+  .search {
+    min-width: 130px;
+    max-width: 130px;
+    height: 36px;
+  }
+  .file-group {
+    display: flex;
+    gap: 5px;
+    margin-top: 0;
+  }
+  .file-group h2 {
+    display: none;
+  }
+  .file-item {
+    min-width: 140px;
+    padding: 7px 10px;
+    margin: 0;
+  }
+  .file-item > svg {
+    display: none;
+  }
+  .editor-panel {
+    width: 100%;
+  }
+  .editor-body {
+    height: 440px;
+  }
+  .editor-header > div:first-child {
+    width: auto;
+    max-width: 100%;
+  }
+  .page-header {
+    padding-bottom: 20px;
+  }
+  .file-count {
+    display: none;
+  }
+}

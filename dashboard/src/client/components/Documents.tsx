@@ -2,8 +2,6 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import {
   Check,
   ChevronRight,
-  FileCode2,
-  FilePlus2,
   GitBranch,
   History,
   LockKeyhole,
@@ -13,6 +11,7 @@ import {
 } from "lucide-react";
 import type { Document, HistoryEntry, Inventory } from "../../shared/types";
 import { api } from "../api";
+import { AgentMark, AgentMarks } from "../brand/AgentMark";
 import { Modal } from "./Dialog";
 
 const Editor = lazy(() => import("./Editor"));
@@ -195,14 +194,11 @@ export function Documents({
                     className={`file-item ${selected === file.id ? "selected" : ""}`}
                     onClick={() => select(file.id)}
                   >
-                    {file.source === "git" ? (
-                      <GitBranch size={16} />
-                    ) : file.exists ? (
-                      <FileCode2 size={16} />
-                    ) : (
-                      <FilePlus2 size={16} />
-                    )}
-                    <span>
+                    {/* The owning agent identifies the file better than a
+                        generic file icon; Git and lock state stay in the
+                        metadata line on the right. */}
+                    <AgentMarks agents={file.agents} />
+                    <span className="file-item-label">
                       <strong>{file.label}</strong>
                       <small>
                         {file.scope === "project"
@@ -229,7 +225,7 @@ export function Documents({
             <>
               <div className="editor-header">
                 <div>
-                  <FileCode2 size={16} />
+                  <AgentMark name={document.agents[0]} size="sm" />
                   <span>{document.path}</span>
                   {dirty ? (
                     <span className="dirty-dot" title="Unsaved changes" />
@@ -278,7 +274,13 @@ export function Documents({
                   ))}
                 </div>
                 <span
-                  className={`badge ${document.source === "git" ? "blue" : ""}`}
+                  className={`badge ${
+                    document.source === "git"
+                      ? "blue"
+                      : document.writable
+                        ? ""
+                        : "locked"
+                  }`}
                 >
                   {document.source === "git" ? (
                     <GitBranch size={12} />
@@ -365,7 +367,10 @@ export function Documents({
               <dt>Read by</dt>
               <dd className="agent-tags">
                 {document.agents.map((agent) => (
-                  <span key={agent}>{agent}</span>
+                  <span key={agent}>
+                    <AgentMark name={agent} size="sm" />
+                    {agent}
+                  </span>
                 ))}
               </dd>
               <dt>Scope</dt>

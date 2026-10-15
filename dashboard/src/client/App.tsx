@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   Box,
-  ExternalLink,
   FileCode2,
   LayoutDashboard,
   LogOut,
@@ -14,6 +13,8 @@ import { Login } from "./components/Login";
 import { Overview } from "./components/Overview";
 import { Documents } from "./components/Documents";
 import { Modal } from "./components/Dialog";
+import { ThemeSwitch } from "./components/ThemeSwitch";
+import { ToolchainList, WorkspaceCard } from "./components/WorkspaceStatus";
 import { Logo } from "./components/Logo";
 
 type Page = "overview" | "instructions" | "config";
@@ -106,25 +107,8 @@ export default function App() {
           ))}
         </nav>
         <div className="sidebar-bottom">
-          <div className="connection-label">
-            <span
-              className={`status-dot ${overview?.t3.reachable ? "" : "offline"}`}
-            />
-            {overview?.t3.reachable
-              ? "Workspace connected"
-              : "Workspace unavailable"}
-          </div>
-          {overview ? (
-            <a
-              href={overview.t3.url}
-              className="nav-item"
-              target="_blank"
-              rel="noreferrer"
-            >
-              <ExternalLink size={17} />
-              Open T3 Code
-            </a>
-          ) : null}
+          <WorkspaceCard overview={overview} />
+          <ToolchainList overview={overview} />
           <button className="nav-item" onClick={() => void navigate("logout")}>
             <LogOut size={17} />
             Sign out
@@ -133,17 +117,21 @@ export default function App() {
       </aside>
       <main className="main-content">
         <div className="topbar">
-          <span>
+          <span className="topbar-context">
             <Box size={14} />
             Your agent workspace
           </span>
-          <button
-            className="icon-button"
-            onClick={refresh}
-            aria-label="Rescan files"
-          >
-            <RefreshCw size={16} />
-          </button>
+          <div className="topbar-actions">
+            <ThemeSwitch />
+            <button
+              className="icon-button"
+              onClick={refresh}
+              aria-label="Rescan files"
+              title="Rescan files"
+            >
+              <RefreshCw size={16} />
+            </button>
+          </div>
         </div>
         {error ? (
           <div className="notice error" role="alert">
@@ -159,6 +147,7 @@ export default function App() {
             inventory={inventory}
             refresh={refresh}
             openInstructions={() => void navigate("instructions")}
+            openConfiguration={() => void navigate("config")}
           />
         ) : (
           <Documents
