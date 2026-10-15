@@ -22,14 +22,15 @@ esac
 
 download_dir=$(mktemp -d)
 trap 'rm -rf "$download_dir"' EXIT HUP INT TERM
-archive="$download_dir/opencode.tar.gz"
-release_url="https://github.com/anomalyco/opencode/releases/download/v$OPENCODE_VERSION"
+archive="$download_dir/opencode.tgz"
+# V2 distributes native platform packages through npm; no Node runtime is needed.
+package="cli-$target"
 curl --fail --silent --show-error --location --retry 3 \
-    "$release_url/opencode-$target.tar.gz" --output "$archive"
+    "https://registry.npmjs.org/@opencode/$package/-/$package-$OPENCODE_VERSION.tgz" --output "$archive"
 printf '%s  %s\n' "$checksum" "$archive" | sha256sum --check --strict
 tar -xzf "$archive" -C "$download_dir"
 install -d /opt/opencode
-install -m 0755 "$download_dir/opencode" /opt/opencode/opencode
+install -m 0755 "$download_dir/package/bin/opencode" /opt/opencode/opencode
 ln -s /opt/opencode/opencode /usr/local/bin/opencode
 
-test "$(opencode --version)" = "$OPENCODE_VERSION"
+test "$(opencode --version)" = "opencode v$OPENCODE_VERSION"

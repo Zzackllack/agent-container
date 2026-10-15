@@ -37,6 +37,10 @@ if (( ${#configs[@]} > 1 )); then
     exit 1
 fi
 opencode_config=${configs[0]:-$opencode_dir/opencode.json}
+if [[ $opencode_config == "$opencode_dir/config.json" ]]; then
+    echo 'OpenCode v2 ignores legacy config.json. Rename it to opencode.jsonc before setup.' >&2
+    exit 1
+fi
 for path in "$codex_dir/config.toml" "$opencode_config" "$key_dir/context7.key"; do
     if [[ -L $path ]] || { [[ -e $path ]] && [[ ! -f $path ]]; }; then
         echo "Setup requires a regular file or an absent path: $path" >&2
@@ -62,7 +66,14 @@ fi
 mkdir -p "$key_dir"
 # Codex refuses helper aliases in /tmp. Keep staging private in the home volume.
 stage=$(mktemp -d "$key_dir/.setup.XXXXXX")
-trap 'rm -rf "$stage"' EXIT
+stage_service=false
+cleanup() {
+    if [[ $stage_service == true ]]; then
+        export_stage opencode service stop >/dev/null 2>&1 || true
+    fi
+    rm -rf "$stage"
+}
+trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 mkdir -p "$stage/codex" "$stage/config/opencode" "$stage/home"
@@ -78,15 +89,31 @@ export_stage() {
         XDG_DATA_HOME="$stage/data" XDG_STATE_HOME="$stage/state" XDG_CACHE_HOME="$stage/cache" \
         CONTEXT7_API_KEY=context7-configuration-check "$@"
 }
+# V2's editor repairs malformed JSONC instead of rejecting it. Check that its
+# loader accepts the original first. Debug starts a managed service, so give
+# this disposable home its own port and stop it before removing the stage.
+port=$(shuf -i 30000-60000 -n 1)
+while (echo > "/dev/tcp/127.0.0.1/$port") >/dev/null 2>&1; do
+    port=$(shuf -i 30000-60000 -n 1)
+done
+stage_service=true
+if ! export_stage opencode service set port "$port" > "$stage/service.log" 2>&1 \
+    || ! export_stage opencode debug config > "$stage/sources.json" 2> "$stage/validation.log" \
+    || ! jq -e --arg path "$stage/config/opencode/opencode.jsonc" \
+        'any(.[]; .type == "document" and .path == $path)' "$stage/sources.json" >/dev/null; then
+    echo 'OpenCode configuration could not be parsed. Original files are unchanged.' >&2
+    exit 1
+fi
+export_stage opencode service stop >/dev/null 2>&1
+stage_service=false
 # Work on copies first. Never echo CLI errors that might quote existing secrets.
 if ! export_stage codex mcp add context7 --url https://mcp.context7.com/mcp \
     --bearer-token-env-var CONTEXT7_API_KEY > "$stage/codex.log" 2>&1; then
     echo 'Codex configuration could not be updated. Check its syntax; original files are unchanged.' >&2
     exit 1
 fi
-if ! export_stage opencode --pure mcp add context7 --url https://mcp.context7.com/mcp \
-    --header 'Authorization=Bearer {env:CONTEXT7_API_KEY}' > "$stage/opencode.log" 2>&1 \
-    || ! export_stage opencode --pure debug config > "$stage/opencode-validation.log" 2>&1; then
+if ! export_stage opencode mcp add context7 --global --url https://mcp.context7.com/mcp \
+    --header 'Authorization=Bearer {env:CONTEXT7_API_KEY}' > "$stage/opencode.log" 2>&1; then
     echo 'OpenCode configuration could not be updated/validated. Original files are unchanged.' >&2
     exit 1
 fi
@@ -118,3 +145,4 @@ publish "$stage/context7.key" "$key_dir/context7.key"
 publish "$stage/codex/config.toml" "$codex_dir/config.toml"
 publish "$stage/config/opencode/opencode.jsonc" "$opencode_config"
 printf 'Context7 configured for Codex and OpenCode. Start fresh provider sessions.\n'
+printf 'If the OpenCode background service is running, restart it with: opencode service restart\n'

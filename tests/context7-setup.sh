@@ -2,7 +2,15 @@
 set -euo pipefail
 # Run as agent inside the built image; fixtures use no real API credentials.
 test_dir=$(mktemp -d "$HOME/context7-check.XXXXXX")
-trap 'rm -rf "$test_dir"' EXIT
+server_pid=
+stop_server() {
+    if [[ -n $server_pid ]]; then
+        kill "$server_pid" 2>/dev/null || true
+        wait "$server_pid" 2>/dev/null || true
+        server_pid=
+    fi
+}
+trap 'stop_server; opencode service stop >/dev/null 2>&1 || true; rm -rf "$test_dir"' EXIT
 export HOME="$test_dir/home" CODEX_HOME="$test_dir/home/.codex"
 export XDG_CONFIG_HOME="$test_dir/home/.config" XDG_DATA_HOME="$test_dir/data"
 export XDG_STATE_HOME="$test_dir/state" XDG_CACHE_HOME="$test_dir/cache"
@@ -35,19 +43,30 @@ if rg -q fixture-context7-key "$CODEX_HOME/config.toml" "$XDG_CONFIG_HOME/openco
 codex mcp get context7 --json > "$test_dir/codex.json"
 jq -e '.transport.url == "https://mcp.context7.com/mcp" and .transport.bearer_token_env_var == "CONTEXT7_API_KEY"' "$test_dir/codex.json" >/dev/null
 codex mcp get existing --json > /dev/null
-opencode --pure debug config > "$test_dir/opencode.json"
-jq -e '.model == "fixture/model" and .mcp.existing.enabled == false and .mcp.context7.headers.Authorization == "***"' "$test_dir/opencode.json" >/dev/null
+opencode debug config > "$test_dir/opencode.json"
+jq -e '[.[] | select(.type == "document") | .info] | any(.model.providerID == "fixture" and .model.model == "model" and .mcp.servers.existing.disabled == true and .mcp.servers.context7.headers.Authorization == "***")' "$test_dir/opencode.json" >/dev/null
 rg -Fq 'Bearer {env:CONTEXT7_API_KEY}' "$XDG_CONFIG_HOME/opencode/opencode.jsonc"
 
 # Debug output redacts headers. A local MCP child proves the launcher exports the
 # stored key to OpenCode, without sending fixture credentials to a remote service.
 verify_key_loading() {
     local expected=$1
-    jq -n --arg output "$test_dir/key-observed" '{mcp: {
-      context7: {enabled: false},
+    jq -n --arg output "$test_dir/key-observed" '{mcp: {servers: {
+      context7: {type: "remote", url: "https://mcp.context7.com/mcp", disabled: true},
       probe: {type: "local", command: ["sh", "-c", "printf '\''%s'\'' \"$CONTEXT7_API_KEY\" > \"$1\"", "probe", $output]}
-    }}' > "$test_dir/probe.json"
-    OPENCODE_CONFIG="$test_dir/probe.json" opencode --pure mcp list > "$test_dir/probe.log" 2>&1
+    }}}' > "$test_dir/probe.json"
+    # V2 activates configuration plugins asynchronously. An immediate `mcp list`
+    # can be empty; exercise a live server as T3 does and wait for activation.
+    OPENCODE_PASSWORD=fixture-server-password OPENCODE_CONFIG="$test_dir/probe.json" \
+        opencode serve --hostname 127.0.0.1 --port 4096 > "$test_dir/probe.log" 2>&1 &
+    server_pid=$!
+    for ((attempt = 0; attempt < 150; attempt++)); do
+        curl --silent --user opencode:fixture-server-password \
+            http://127.0.0.1:4096/api/mcp >/dev/null || true
+        [[ -f $test_dir/key-observed ]] && break
+        sleep 0.2
+    done
+    stop_server
     test "$(cat "$test_dir/key-observed")" = "$expected"
     rm "$test_dir/key-observed"
 }
@@ -86,16 +105,20 @@ rm "$XDG_CONFIG_HOME/opencode/opencode.json" "$XDG_CONFIG_HOME/opencode/opencode
 # A fresh workspace should not require a pre-existing OpenCode config.
 printf 'fresh-fixture-key\n' | context7-setup --stdin >/dev/null
 codex mcp get context7 --json >/dev/null
-opencode --pure debug config > "$test_dir/fresh.json"
-jq -e '.mcp.context7.headers.Authorization == "***"' "$test_dir/fresh.json" >/dev/null
+# These fixtures replace the config filename. Start a fresh loader rather than
+# depending on the retained service's asynchronous file watcher.
+opencode service stop >/dev/null 2>&1
+opencode debug config > "$test_dir/fresh.json"
+jq -e '[.[] | select(.type == "document") | .info] | any(.mcp.servers.context7.headers.Authorization == "***")' "$test_dir/fresh.json" >/dev/null
 verify_key_loading fresh-fixture-key
-# The global loader also accepts the older file names; update them in place.
-for filename in config.json opencode.jsonc; do
-    mv "$XDG_CONFIG_HOME/opencode/opencode.json" "$XDG_CONFIG_HOME/opencode/$filename"
-    printf 'fresh-fixture-key\n' | context7-setup --stdin >/dev/null
-    opencode --pure debug config > "$test_dir/legacy.json"
-    jq -e '.mcp.context7.url == "https://mcp.context7.com/mcp"' "$test_dir/legacy.json" >/dev/null
-    test ! -e "$XDG_CONFIG_HOME/opencode/opencode.json"
-    mv "$XDG_CONFIG_HOME/opencode/$filename" "$XDG_CONFIG_HOME/opencode/opencode.json"
-done
+# V2 ignores legacy config.json: do not silently publish credentials to it.
+mv "$XDG_CONFIG_HOME/opencode/opencode.json" "$XDG_CONFIG_HOME/opencode/config.json"
+if printf 'must-not-publish\n' | context7-setup --stdin >/dev/null 2>&1; then exit 1; fi
+mv "$XDG_CONFIG_HOME/opencode/config.json" "$XDG_CONFIG_HOME/opencode/opencode.json"
+mv "$XDG_CONFIG_HOME/opencode/opencode.json" "$XDG_CONFIG_HOME/opencode/opencode.jsonc"
+printf 'fresh-fixture-key\n' | context7-setup --stdin >/dev/null
+opencode service stop >/dev/null 2>&1
+opencode debug config > "$test_dir/legacy.json"
+jq -e '[.[] | select(.type == "document") | .info] | any(.mcp.servers.context7.url == "https://mcp.context7.com/mcp")' "$test_dir/legacy.json" >/dev/null
+test ! -e "$XDG_CONFIG_HOME/opencode/opencode.json"
 echo 'Context7 configuration, preservation, rotation, and failure checks passed.'

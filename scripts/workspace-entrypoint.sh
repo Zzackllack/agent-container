@@ -30,7 +30,9 @@ stop_process() {
     local pid=$1 timeout_seconds=$2 target=$3
     [[ -n $pid ]] || return 0
     local deadline=$((SECONDS + timeout_seconds))
-    kill -TERM -- "$target" 2>/dev/null || true
+    # T3's launcher must mark the service as stopping before signaling its child.
+    # Kill the entire group only if graceful shutdown times out.
+    kill -TERM -- "$pid" 2>/dev/null || true
     while kill -0 -- "$target" 2>/dev/null && (( SECONDS < deadline )); do sleep 1; done
     kill -KILL -- "$target" 2>/dev/null || true
     wait "$pid" 2>/dev/null || true
