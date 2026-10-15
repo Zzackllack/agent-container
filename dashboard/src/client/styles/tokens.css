@@ -1,0 +1,72 @@
+/**
+ * Design tokens.
+ *
+ * Every colour is a `light-dark()` pair, so a theme switch is only a matter of
+ * flipping `color-scheme` on the root element (see theme.ts) instead of
+ * duplicating whole palettes. Keep tokens semantic: components should reference
+ * `--surface`/`--text`/`--accent`, never a raw hex value.
+ */
+
+:root {
+  color-scheme: light dark;
+
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --canvas: light-dark(#f3f6fb, #0c1016);
+  --surface: light-dark(#ffffff, #141a22);
+  --surface-sunken: light-dark(#eef2f8, #0f141b);
+  --surface-hover: light-dark(#e9eff8, #1b222c);
+  --surface-active: light-dark(#e2eaf8, #212a36);
+  --sidebar: light-dark(#e9eff8, #10151c);
+
+  --border: light-dark(#dce4ef, #232c37);
+  --border-strong: light-dark(#c4d0e2, #33404f);
+
+  --text: light-dark(#1b2637, #e4eaf3);
+  --text-muted: light-dark(#5f6e86, #8c9bb1);
+  --text-faint: light-dark(#7f8da2, #6a7889);
+
+  --accent: light-dark(#2f55f5, #7d97ff);
+  --accent-hover: light-dark(#2343d6, #93a9ff);
+  --accent-soft: light-dark(#e6ecff, #1a2540);
+  --accent-text: light-dark(#2645cc, #a7baff);
+  --on-accent: light-dark(#ffffff, #08101f);
+
+  --success: light-dark(#1c7a56, #52cb9d);
+  --success-soft: light-dark(#e6f5ee, #11251d);
+  --warning: light-dark(#916620, #e0b055);
+  --warning-soft: light-dark(#fdf2e0, #292114);
+  --danger: light-dark(#ae3a35, #f08a84);
+  --danger-soft: light-dark(#fdecea, #2c1614);
+
+  --focus-ring: light-dark(#335cff88, #7d97ff99);
+  --shadow-sm: 0 1px 2px light-dark(#16233a14, #0006);
+  --shadow-md: 0 3px 14px light-dark(#253d6208, #0007);
+  --shadow-lg: 0 24px 80px light-dark(#10233a26, #000000a6);
+
+  /* Agent marks: vendor tiles keep their own colour, glyph-only marks (Codex,
+     GitHub) sit on this neutral tile so the set reads as one row. */
+  --mark-bg: light-dark(#ffffff, #1b222c);
+  --mark-ring: light-dark(#0f172a1f, #ffffff24);
+  --mark-ink: light-dark(#1b2637, #e4eaf3);
+
+  /* CodeMirror reads these directly, see components/Editor.tsx. */
+  --editor-gutter: light-dark(#f7f9fc, #11171f);
+  --editor-active: light-dark(#f0f4fc, #1a212b);
+  --editor-selection: light-dark(#335cff26, #7d97ff33);
+  --editor-ink: light-dark(#26344a, #d6dfec);
+
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --sidebar-width: 244px;
+}
+
+/* Explicit choices from the theme switch; anything else stays on the OS setting. */
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}

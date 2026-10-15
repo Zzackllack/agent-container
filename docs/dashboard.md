@@ -2,7 +2,7 @@
 
 The dashboard edits instruction and configuration files in the same home and
 workspace volumes the agents use. It is a separate Compose service: React, Vite,
-TypeScript, Tailwind CSS, CodeMirror, and a small Hono API on Node.js 24. The
+TypeScript, plain CSS, CodeMirror, and a small Hono API on Node.js 24. The
 workspace image does not need Node.js for this service.
 
 ## Open it
@@ -71,6 +71,19 @@ skips hidden/generated/dependency directories. Missing files are offered at the
 workspace root and detected Git repository roots. The editor limit is 128 KiB.
 Start a fresh agent session after instruction edits. Configuration changes may
 also require restarting the affected provider or workspace service.
+
+## Appearance and branding
+
+The top bar holds a three-way colour switch: follow the system, light, or
+dark. The choice is stored in the browser's local storage and applies before the
+first paint; nothing about it is written to the volumes. Palettes are
+`light-dark()` token pairs in `dashboard/src/client/styles/tokens.css`, so
+components reference a semantic token instead of a hex value.
+
+T3 Code, Codex, OpenCode, and GitHub CLI appear with their own marks in the
+sidebar, the overview, and next to the files each agent reads. The artwork is
+copied from the vendors' own repositories and stays decorative; sources and
+licences are listed in `dashboard/src/client/brand/README.md`.
 
 ## Instruction files
 

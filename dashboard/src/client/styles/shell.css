@@ -1,0 +1,231 @@
+/* App shell: sidebar, top bar, page scaffolding. */
+
+.app-shell {
+  display: flex;
+  min-height: 100dvh;
+}
+
+/* ── Sidebar ───────────────────────────────────────────────────────────── */
+
+.sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  padding: 26px 16px 16px;
+  background: var(--sidebar);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 5;
+}
+
+.brand {
+  display: flex;
+  gap: 11px;
+  align-items: center;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.35px;
+  padding: 0 6px;
+}
+.brand small {
+  display: block;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0;
+  margin-top: 3px;
+}
+.brand-mark {
+  width: 44px;
+  height: 44px;
+  display: block;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+nav {
+  display: grid;
+  gap: 4px;
+  margin-top: 34px;
+}
+.nav-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  padding: 10px 12px;
+  font-size: 14px;
+  text-align: left;
+}
+.nav-item:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+.nav-item.active {
+  color: var(--accent-text);
+  background: var(--accent-soft);
+  font-weight: 500;
+}
+.nav-item svg {
+  flex-shrink: 0;
+}
+
+.sidebar-bottom {
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+  flex-shrink: 0;
+}
+.status-dot.offline {
+  background: var(--border-strong);
+}
+
+/* ── Main column ───────────────────────────────────────────────────────── */
+
+.main-content {
+  margin-left: var(--sidebar-width);
+  width: calc(100% - var(--sidebar-width));
+  min-width: 0;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 32px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  backdrop-filter: blur(10px);
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.topbar-context {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 34px 0 26px;
+}
+.page-header p {
+  color: var(--text-muted);
+  margin-top: 9px;
+  font-size: 14px;
+  max-width: 70ch;
+}
+
+.documents-page,
+.overview-page {
+  padding: 0 32px 28px;
+}
+
+@media (min-width: 1600px) {
+  .documents-page,
+  .overview-page {
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 1250px) {
+  :root {
+    --sidebar-width: 210px;
+  }
+  .sidebar {
+    padding-inline: 12px;
+  }
+  .documents-page,
+  .overview-page {
+    padding-inline: 24px;
+  }
+}
+
+@media (max-width: 800px) {
+  .sidebar {
+    position: static;
+    width: 100%;
+    padding: 14px 16px;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .app-shell {
+    flex-direction: column;
+  }
+  .brand {
+    font-size: 15px;
+  }
+  .brand small {
+    display: none;
+  }
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+  }
+  nav {
+    margin-top: 14px;
+    display: flex;
+    gap: 4px;
+  }
+  .nav-item {
+    padding: 8px 10px;
+    width: auto;
+    font-size: 12px;
+    gap: 7px;
+  }
+  .sidebar-bottom {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 10px;
+  }
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+  }
+  .topbar {
+    height: 44px;
+    padding-inline: 16px;
+  }
+  .page-header {
+    padding-top: 24px;
+  }
+  h1 {
+    font-size: 25px;
+  }
+  .page-header p {
+    font-size: 12px;
+  }
+  .documents-page,
+  .overview-page {
+    padding-inline: 16px;
+  }
+}

@@ -1,0 +1,141 @@
+/* Vendor marks and the sidebar status chips that show them. */
+
+/* ── Vendor marks ──────────────────────────────────────────────────────── */
+
+.mark {
+  --mark-size: 22px;
+  display: inline-grid;
+  place-items: center;
+  width: var(--mark-size);
+  height: var(--mark-size);
+  border-radius: 24%;
+  flex-shrink: 0;
+  overflow: hidden;
+  /* Keeps black vendor tiles legible on the dark canvas. */
+  box-shadow: inset 0 0 0 1px var(--mark-ring);
+}
+.mark-art {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+/* OpenAI/GitHub artwork is a bare glyph, so the chip provides the tile. */
+.mark--glyph {
+  background: var(--mark-bg);
+  color: var(--mark-ink);
+}
+.mark--glyph .mark-art {
+  width: 72%;
+  height: 72%;
+}
+.mark--sm {
+  --mark-size: 17px;
+}
+.mark--lg {
+  --mark-size: 30px;
+}
+.mark--xl {
+  --mark-size: 50px;
+  border-radius: 22%;
+}
+.mark-stack {
+  display: inline-flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* ── Workspace card and toolchain in the sidebar ───────────────────────── */
+
+.workspace-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.workspace-card:hover {
+  border-color: var(--border-strong);
+}
+/* The mark is a span too, so the text block needs its own hook. */
+.workspace-card-label {
+  flex: 1;
+  min-width: 0;
+}
+.workspace-card strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.workspace-card small {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  color: var(--text-faint);
+  font-size: 10px;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.workspace-card > svg {
+  color: var(--text-faint);
+  flex-shrink: 0;
+}
+
+.toolchain {
+  display: grid;
+  gap: 1px;
+  margin: 0 0 10px;
+  padding: 0;
+}
+.toolchain li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 4px;
+  list-style: none;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+.toolchain code {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--text-faint);
+}
+
+/* Facts about what runs in the box, not marketing copy. */
+.login-marks {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 26px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+.login-marks > span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+@media (max-width: 800px) {
+  .sidebar-bottom .toolchain {
+    display: flex;
+    gap: 10px;
+    margin: 0;
+  }
+  .workspace-card {
+    flex: 1;
+    min-width: 190px;
+    margin-bottom: 0;
+  }
+}

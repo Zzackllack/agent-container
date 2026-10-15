@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { ArrowRight, KeyRound } from "lucide-react";
 import { api } from "../api";
+import { AgentMark } from "../brand/AgentMark";
+import { ThemeSwitch } from "./ThemeSwitch";
 import { Logo } from "./Logo";
 
 export function Login({ onLogin }: { onLogin: () => void }) {
@@ -63,8 +65,15 @@ export function Login({ onLogin }: { onLogin: () => void }) {
             docker compose exec dashboard cat /var/lib/agent-dashboard/password
           </code>
         </details>
+        <div className="login-marks">
+          <span>Editing files for</span>
+          <AgentMark name="T3 Code" size="md" />
+          <AgentMark name="Codex" size="md" />
+          <AgentMark name="OpenCode" size="md" />
+        </div>
         <div className="login-foot">
-          Runs on your box. Files stay in your volumes.
+          <span>Runs on your box. Files stay in your volumes.</span>
+          <ThemeSwitch />
         </div>
       </div>
       <div className="login-aside" aria-hidden="true">
