@@ -8,3 +8,7 @@
 /.codex/
 /workspace/
 /instruction-state/
+
+# Dashboard build and development artifacts.
+/dashboard/node_modules/
+/dashboard/dist/

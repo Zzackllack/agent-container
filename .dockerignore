@@ -21,3 +21,14 @@
 !versions/opencode.env
 !versions/docker.env
 !versions/gh.env
+!dashboard/
+!dashboard/Dockerfile
+!dashboard/package.json
+!dashboard/pnpm-lock.yaml
+!dashboard/pnpm-workspace.yaml
+!dashboard/tsconfig.json
+!dashboard/vite.config.ts
+!dashboard/build-server.mjs
+!dashboard/index.html
+!dashboard/src/
+!dashboard/src/**
