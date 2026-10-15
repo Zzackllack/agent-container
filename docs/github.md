@@ -65,9 +65,63 @@ intended private repository verifies Git access separately. HTTPS repositories
 use `gh auth setup-git`; SSH repositories need their own SSH keys/agent access.
 GitHub Enterprise can use a different hostname in the same auth commands.
 
-The container's login does not configure a host-side instruction-sync cron
-account. That account's credentials remain separate, as described in the
-[instruction sync guide](instructions.md).
+## Signed commits
+
+`gh auth login` authorizes GitHub access. It does not import your Git identity,
+Git configuration, or a GPG private key. GitHub stores your **public** GPG key
+to verify signatures; signing inside the workspace requires access to the
+corresponding private signing key through GnuPG.
+
+Choose a signing method before enabling mandatory signatures:
+
+- A dedicated workspace signing key, added to the same GitHub account, works
+  while your Mac is offline. It can be revoked independently of your personal key.
+- An existing private signing subkey can be imported through a private terminal
+  transfer. Agent code with access to that key can use or copy it; avoid importing
+  your primary personal key merely for convenience.
+- Forwarding a GPG agent keeps the private key on your Mac, but requires a live
+  authenticated connection and deliberate socket forwarding. It is not included
+  in the 24/7 Compose setup. Forwarding still grants signing access while connected.
+
+For local-key signing, install the tools inside an `agent` shell, or add them to
+your own image for persistence across recreation:
+
+```sh
+sudo apt-get update
+sudo apt-get install -y --no-install-recommends gnupg pinentry-curses
+export GPG_TTY=$(tty)
+# Generate a dedicated key, or securely import your chosen signing subkey.
+gpg --full-generate-key
+gpg --list-secret-keys --keyid-format=long
+```
+
+Export only the public key with `gpg --armor --export FULL_FINGERPRINT`, then add
+it under **GitHub → Settings → SSH and GPG keys**. Use an email verified on your
+GitHub account in the key identity and Git configuration. After provisioning:
+
+```sh
+git config --global user.name 'Your Name'
+git config --global user.email 'your-verified-email@example.com'
+git config --global gpg.format openpgp
+git config --global gpg.program gpg
+git config --global user.signingkey FULL_FINGERPRINT
+git config --global commit.gpgsign true
+git config --global tag.gpgSign true
+```
+
+Replace `FULL_FINGERPRINT` with the chosen key's fingerprint. Run these commands
+as `agent`; `~/.gitconfig` and `~/.gnupg` persist in `agent-home`. Do not put private
+keys in this repository, Compose, an image, or the dashboard.
+
+Verify on the next intended commit with `git log -1 --show-signature` and check
+the pushed commit's GitHub verification status. A passphrase-protected key needs
+an available pinentry or a cached GPG-agent unlock; a background agent cannot
+answer an interactive prompt. Mandatory signing fails if the key is unavailable;
+do not disable it silently. GitHub authentication and commit signing are separate
+checks. See GitHub's [signing setup](https://docs.github.com/en/authentication/managing-commit-signature-verification/telling-git-about-your-signing-key)
+and [signature verification](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification).
+
+## Log out
 
 To remove the stored login:
 
