@@ -103,4 +103,5 @@ from `0.0.46-nightly.20261014.3105` to `0.0.46-nightly.20261014.3118` committed 
 survived both restart and recreation; these are recorded test versions, not pins.
 Provider login, a real Context7 query, native client compatibility, and
 agent-driven builds remain separate checks. Earlier Sysbox integration evidence
-is recorded in the README; local Docker Desktop tests do not repeat it.
+is recorded in the [validation guide](validation.md); local Docker Desktop tests
+do not repeat it.

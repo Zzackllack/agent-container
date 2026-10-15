@@ -7,7 +7,8 @@ inside the image.
 
 Nested builds, Compose networking, two-layer port forwarding, persistence, and
 Codex sandboxed Docker commands passed on an amd64 Ubuntu 24.04 Sysbox host.
-The README records the tested versions; verify compatibility on your own host.
+The [validation record](validation.md) lists the tested versions; verify
+compatibility on your own host.
 
 ## Host requirements
 
