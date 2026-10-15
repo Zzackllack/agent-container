@@ -30,6 +30,7 @@ services:
       start_period: 10s
       retries: 3
   workspace:
+    hostname: "${WORKSPACE_HOSTNAME:-agent-container}"
     build:
       context: .
       args:

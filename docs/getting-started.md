@@ -39,6 +39,27 @@ docker compose exec --user agent workspace bash
 
 ## Configure the agents
 
+### Workspace hostname
+
+Set `WORKSPACE_HOSTNAME` in `.env` to give the workspace a readable hostname:
+
+```dotenv
+WORKSPACE_HOSTNAME=agent-box
+```
+
+Compose passes this through `services.workspace.hostname`. Recreate the workspace
+with `docker compose up -d --no-deps workspace` using your usual overrides.
+The next shell uses `agent@agent-box` rather than a container ID. The hostname
+also supplies a readable default for tools that use it as their environment name;
+an already saved custom name in T3 may need to be changed separately.
+In Coolify, set the environment variable and ensure Raw Compose includes the
+`hostname: ${WORKSPACE_HOSTNAME:-agent-container}` line, then redeploy.
+
+This is the container's hostname; it does not rename the Linux host or change
+the URL/NetBird address. Named volumes and saved agent data stay the same.
+
+### Provider login
+
 Log in to the providers you want to use:
 
 ```sh
