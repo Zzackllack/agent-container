@@ -17,9 +17,20 @@ export interface Document extends DocumentInfo {
   content: string;
   revision: string | null;
 }
+export type WarningLevel = "info" | "warning";
+export interface InventoryWarning {
+  /** Stable identifier; one entry exists per reason, never per folder. */
+  code: "scan-depth" | "scan-limit" | "scan-permission";
+  level: WarningLevel;
+  message: string;
+  /** Affected folders, collapsed behind a disclosure in the dashboard. */
+  details?: string[];
+  /** Folders left out of `details` because the list was capped. */
+  hidden?: number;
+}
 export interface Inventory {
   documents: DocumentInfo[];
-  warnings: string[];
+  warnings: InventoryWarning[];
 }
 export interface HistoryEntry {
   id: string;

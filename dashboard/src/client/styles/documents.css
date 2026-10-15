@@ -81,6 +81,89 @@
   padding: 16px 8px;
 }
 
+/* ── Scan warnings ─────────────────────────────────────────────────────── */
+/* Every note stays one row; folders live in a scrollable disclosure so a deep
+   workspace cannot push the file list or the editor below the fold. */
+
+.scan-warnings {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.scan-warning {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 0;
+}
+.scan-warning summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  cursor: pointer;
+  list-style: none;
+}
+.scan-warning summary::-webkit-details-marker {
+  display: none;
+}
+p.scan-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+}
+.scan-warning > svg,
+.scan-warning summary > svg {
+  flex-shrink: 0;
+}
+.scan-warning-text {
+  flex: 1;
+  min-width: 0;
+}
+.scan-warning-count {
+  flex-shrink: 0;
+  font-size: 10px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+.scan-warning-chevron {
+  flex-shrink: 0;
+  color: var(--text-faint);
+  transition: transform 120ms ease;
+}
+.scan-warning[open] .scan-warning-chevron {
+  transform: rotate(90deg);
+}
+.scan-warning.warning {
+  background: var(--warning-soft);
+  border-color: color-mix(in srgb, var(--warning) 26%, transparent);
+  color: var(--warning);
+}
+.scan-warning-details {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  padding: 8px 12px 10px 33px;
+  border-top: 1px solid var(--border);
+  max-height: 168px;
+  overflow: auto;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+.scan-warning-details li {
+  overflow-wrap: anywhere;
+}
+.scan-warning-details li.more {
+  color: var(--text-faint);
+  font-style: italic;
+}
+
 /* ── Editor shell ──────────────────────────────────────────────────────── */
 
 .editor-panel {

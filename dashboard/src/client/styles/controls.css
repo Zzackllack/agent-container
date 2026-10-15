@@ -140,12 +140,6 @@
   border-color: color-mix(in srgb, var(--success) 26%, transparent);
   color: var(--success);
 }
-.notice.warning {
-  background: var(--warning-soft);
-  border-color: color-mix(in srgb, var(--warning) 26%, transparent);
-  color: var(--warning);
-  margin-bottom: 12px;
-}
 .notice button {
   margin-left: auto;
   flex-shrink: 0;

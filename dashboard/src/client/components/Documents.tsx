@@ -11,6 +11,7 @@ import {
 import type { Document, HistoryEntry, Inventory } from "../../shared/types";
 import { api } from "../api";
 import { AgentMark, AgentMarks } from "../brand/AgentMark";
+import { InventoryWarnings } from "./InventoryWarnings";
 import { Modal } from "./Dialog";
 
 const Editor = lazy(() => import("./Editor"));
@@ -160,11 +161,9 @@ export function Documents({
         </div>
         <span className="file-count">{files.length} locations</span>
       </header>
-      {inventory.warnings.map((warning) => (
-        <p className="notice warning" key={warning}>
-          {warning}
-        </p>
-      ))}
+      {inventory.warnings.length ? (
+        <InventoryWarnings warnings={inventory.warnings} />
+      ) : null}
       <div className="document-layout">
         <aside className="file-pane">
           <label className="search">

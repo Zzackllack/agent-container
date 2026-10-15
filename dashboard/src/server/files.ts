@@ -33,6 +33,7 @@ import type {
   Format,
   HistoryEntry,
   Inventory,
+  InventoryWarning,
 } from "../shared/types.js";
 import type { Settings } from "./config.js";
 
@@ -48,6 +49,22 @@ const SKIP = new Set([
   "target",
   ".next",
 ]);
+// Bounds for the workspace walk. Whichever bound truncates the walk is reported
+// once, with the affected folders behind a disclosure — a folder-per-warning
+// list is what used to bury the editor on workspaces with deep paths.
+const SCAN_MAX_DEPTH = 6;
+const SCAN_MAX_DIRECTORIES = 2000;
+const SCAN_MAX_DOCUMENTS = 400;
+const WARNING_DETAIL_LIMIT = 50;
+
+/** Unique, sorted folder list for a warning, capped so huge walks stay small. */
+function cappedPaths(paths: string[]): { details: string[]; hidden: number } {
+  const unique = [...new Set(paths)].sort((a, b) => a.localeCompare(b));
+  return {
+    details: unique.slice(0, WARNING_DETAIL_LIMIT),
+    hidden: Math.max(0, unique.length - WARNING_DETAIL_LIMIT),
+  };
+}
 export class FileError extends Error {
   constructor(
     public status: 400 | 403 | 404 | 409 | 413 | 422,
@@ -228,21 +245,41 @@ export class Files {
     }
   }
   async inventory(): Promise<Inventory> {
+    const [documents, warnings] = await this.scanWorkspace();
+    const openCodeConfigExists = documents.some(
+      (doc) => doc.id.startsWith("opencode:config:") && doc.exists,
+    );
+    return {
+      documents: documents.filter((doc) => {
+        if (doc.id.startsWith("opencode:config:") && !doc.exists)
+          return !openCodeConfigExists && doc.id.endsWith(":jsonc");
+        return true;
+      }),
+      warnings,
+    };
+  }
+  /**
+   * Collects the known documents plus the notes explaining what the walk skipped.
+   * Each bound that truncated the walk yields one entry, never one per folder.
+   */
+  private async scanWorkspace(): Promise<[DocumentInfo[], InventoryWarning[]]> {
     const documents = await Promise.all(
       this.globals().map((entry) => this.inspect(entry)),
     );
-    const warnings: string[] = [];
+    const unreadable: string[] = [];
+    const truncated: string[] = [];
     let visited = 0;
     const scan = async (directory: string, depth: number): Promise<void> => {
-      if (++visited > 2000 || documents.length >= 400) return;
+      if (
+        ++visited > SCAN_MAX_DIRECTORIES ||
+        documents.length >= SCAN_MAX_DOCUMENTS
+      )
+        return;
       let entries;
       try {
         entries = await readdir(directory, { withFileTypes: true });
       } catch (error) {
-        if (!missing(error))
-          warnings.push(
-            `Cannot scan ${directory}. Check directory permissions.`,
-          );
+        if (!missing(error)) unreadable.push(directory);
         return;
       }
       const repo = entries.some((entry) => entry.name === ".git");
@@ -257,32 +294,46 @@ export class Files {
           !entry.name.startsWith(".") &&
           !SKIP.has(entry.name),
       );
-      if (depth >= 6) {
-        if (children.length)
-          warnings.push(`Scan stops after six levels at ${directory}.`);
+      if (depth >= SCAN_MAX_DEPTH) {
+        if (children.length) truncated.push(directory);
         return;
       }
       for (const entry of children) {
-        if (visited >= 2000 || documents.length >= 400) break;
+        if (
+          visited >= SCAN_MAX_DIRECTORIES ||
+          documents.length >= SCAN_MAX_DOCUMENTS
+        )
+          break;
         await scan(join(directory, entry.name), depth + 1);
       }
     };
     await scan(this.config.workspace, 0);
-    if (visited >= 2000 || documents.length >= 400)
-      warnings.push(
-        "Workspace scan limit reached (2,000 directories / 400 documents).",
-      );
-    const openCodeConfigExists = documents.some(
-      (doc) => doc.id.startsWith("opencode:config:") && doc.exists,
-    );
-    return {
-      documents: documents.filter((doc) => {
-        if (doc.id.startsWith("opencode:config:") && !doc.exists)
-          return !openCodeConfigExists && doc.id.endsWith(":jsonc");
-        return true;
-      }),
-      warnings,
-    };
+
+    const warnings: InventoryWarning[] = [];
+    if (
+      visited >= SCAN_MAX_DIRECTORIES ||
+      documents.length >= SCAN_MAX_DOCUMENTS
+    )
+      warnings.push({
+        code: "scan-limit",
+        level: "warning",
+        message: `Scanning stopped at the limit of ${SCAN_MAX_DIRECTORIES.toLocaleString()} folders / ${SCAN_MAX_DOCUMENTS} files, so some instruction files may be missing.`,
+      });
+    if (unreadable.length)
+      warnings.push({
+        code: "scan-permission",
+        level: "warning",
+        message: `Cannot read ${unreadable.length === 1 ? "one folder" : `${unreadable.length.toLocaleString()} folders`}. Check directory permissions.`,
+        ...cappedPaths(unreadable),
+      });
+    if (truncated.length)
+      warnings.push({
+        code: "scan-depth",
+        level: "info",
+        message: `Scanning skipped ${truncated.length === 1 ? "one folder" : `${truncated.length.toLocaleString()} folders`} deeper than ${SCAN_MAX_DEPTH} levels. Nested instruction files there are not listed.`,
+        ...cappedPaths(truncated),
+      });
+    return [documents, warnings];
   }
   async read(id: string): Promise<Document> {
     const definition = this.definition(id);

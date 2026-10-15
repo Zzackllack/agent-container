@@ -126,6 +126,38 @@ test("symlinks, removed Git sources, path traversal, and credential files are re
   }
 });
 
+test("scan limits are reported once with the affected folders attached", async () => {
+  const f = await fixture();
+  try {
+    // Two branches long enough that the walk stops at the depth bound, each with
+    // a child directory so the bound is actually hit.
+    const [first, second] = [
+      join(f.config.workspace, "deep/a/b/c/d/e"),
+      join(f.config.workspace, "other/x/y/z/w/deepest"),
+    ];
+    await mkdir(join(first, "nested"), { recursive: true });
+    await mkdir(join(second, "nested"), { recursive: true });
+    const inventory = await f.files.inventory();
+    const depth = inventory.warnings.filter(
+      (warning) => warning.code === "scan-depth",
+    );
+    assert.equal(depth.length, 1);
+    assert.equal(depth[0].level, "info");
+    assert.match(depth[0].message, /deeper than 6 levels/);
+    assert.deepEqual(depth[0].details, [
+      join(f.config.workspace, "deep/a/b/c/d/e"),
+      join(f.config.workspace, "other/x/y/z/w/deepest"),
+    ]);
+    assert.equal(depth[0].hidden, 0);
+    assert.deepEqual(
+      inventory.warnings.filter((warning) => warning.level === "warning"),
+      [],
+    );
+  } finally {
+    await f.cleanup();
+  }
+});
+
 test("config validation and project discovery preserve comments and avoid duplicate OpenCode layers", async () => {
   const f = await fixture();
   try {

@@ -67,8 +67,11 @@ lock against another process writing at the exact instant of replacement.
 
 Use **Rescan files** after adding repositories or editing files outside the UI.
 Scanning stops at six directory levels, 2,000 directories, or 400 documents and
-skips hidden/generated/dependency directories. Missing files are offered at the
-workspace root and detected Git repository roots. The editor limit is 128 KiB.
+skips hidden/generated/dependency directories. Reaching a bound adds a single
+collapsed note above the file list naming the folders involved, so a workspace
+with deep paths does not fill the page with one banner per folder. Missing files
+are offered at the workspace root and detected Git repository roots. The editor
+limit is 128 KiB.
 Start a fresh agent session after instruction edits. Configuration changes may
 also require restarting the affected provider or workspace service.
 
