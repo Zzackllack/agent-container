@@ -67,6 +67,8 @@ RUN useradd --create-home --uid 1000 --shell /bin/bash agent \
     && chmod 0440 /etc/sudoers.d/agent \
     && install -d -o agent -g agent /workspace \
         /home/agent/.config \
+        /home/agent/.local /home/agent/.local/share /home/agent/.local/state \
+        /home/agent/.cache \
         /home/agent/.codex /home/agent/.t3 /home/agent/.docker \
         /home/agent/.config/opencode /home/agent/.local/share/opencode \
         /home/agent/.local/state/opencode /home/agent/.cache/opencode

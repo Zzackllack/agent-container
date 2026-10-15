@@ -6,6 +6,15 @@ for the currently deployed nightly. To reproduce relevant checks, see the
 
 ## Root-exec authentication repair and instruction cleanup (2026-10-15)
 
+A follow-up found existing root-owned OpenCode logs/state and root-owned XDG
+parent directories. Targeted ownership repair on the live workspace restored
+`opencode auth list` as `agent`; it reported no configured integrations. Codex's
+existing ChatGPT login still passed. The image now owns the XDG parents as agent,
+and the native arm64 regression check creates both Codex credentials and an
+OpenCode log through root-invoked launchers, then verifies agent ownership/access.
+Custom/default hostname values passed Compose validation; a disposable container
+reported `agent@agent-box`. The live workspace was not recreated for its hostname.
+
 On the live Sysbox workspace, Codex 0.161.0 had a root-owned `0600` auth file.
 `agent` received `Permission denied (os error 13)` while root reported an existing
 ChatGPT login. Changing only root-owned entries under `.codex` to `agent` restored

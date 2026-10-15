@@ -103,6 +103,31 @@ This keeps credential permissions private and preserves sessions and existing
 login. If status reports no login afterward, run `codex login --device-auth`
 as `agent`. Do not make `auth.json` world-readable or paste its contents into logs.
 
+### OpenCode permission errors
+
+Older root invocations can also leave OpenCode logs, state and credentials
+unwritable by `agent`. Repair the root-owned entries in OpenCode's directories,
+preserving file permissions and avoiding symlink traversal:
+
+```sh
+docker compose exec --user root workspace sh -ec '
+  for p in /home/agent/.local /home/agent/.local/share /home/agent/.local/state /home/agent/.cache; do
+    if [ -d "$p" ] && [ ! -L "$p" ] && [ "$(stat -c %u "$p")" = 0 ]; then
+      chown agent:agent "$p"
+    fi
+  done
+  for p in /home/agent/.local/share/opencode /home/agent/.local/state/opencode /home/agent/.cache/opencode /home/agent/.config/opencode; do
+    if [ -d "$p" ] && [ ! -L "$p" ]; then
+      find "$p" -xdev -uid 0 -exec chown -h agent:agent {} +
+    fi
+  done'
+docker compose exec --user agent workspace opencode auth list
+```
+
+Do not delete the OpenCode directories: they contain persistent sessions and
+credentials. New images give `agent` ownership of the XDG parent directories,
+but existing home volumes still need the one-time repair above.
+
 The container boundary and Codex's own command sandbox are separate. This image
 does not configure a Codex sandbox bypass. On the tested Ubuntu Sysbox host,
 Codex required an executable-specific AppArmor exception. Docker commands also
