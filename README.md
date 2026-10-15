@@ -7,12 +7,6 @@
 OpenCode, and T3 Code's web interface. Run it locally with Docker or keep it
 available on a Linux server, with tools and configuration maintained in one
 rebuildable image.</p>
-
-<p><strong>Status:</strong> the Debian 13 image includes Codex, OpenCode v2, and T3 Code nightly.
-Compose starts T3's web server with persistent storage and a configurable host
-port. An opt-in Sysbox configuration starts an internal Docker daemon for image
-builds and container-based tests. Nested builds, Compose networking, persistence,
-and Codex sandboxed Docker commands have been verified on a Linux Sysbox host.</p>
 </td>
 <td width="200" align="center" valign="top">
 <img src="assets/logo.png" width="160" height="160" alt="agent-container logo" />
@@ -367,11 +361,13 @@ Installing Sysbox may affect Docker configuration or require a daemon restart.
 Its own installation is small, but project images, build caches, and test data
 need a separate disk budget; a container memory limit does not limit that storage.
 
-## Next steps
+## Status
 
-1. Configure provider authentication and run an agent task against a real project.
-2. Add the project's language runtimes and verify its image builds/Compose tests.
-3. Configure client reachability and verify the intended web/native clients.
+The Debian 13 image includes Codex, OpenCode v2, and T3 Code nightly.
+Compose starts T3's web server with persistent storage and a configurable host
+port. An opt-in Sysbox configuration starts an internal Docker daemon for image
+builds and container-based tests. Nested builds, Compose networking, persistence,
+and Codex sandboxed Docker commands have been verified on a Linux Sysbox host.</p>
 
 ## Development
 
