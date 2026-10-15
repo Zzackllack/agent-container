@@ -5,7 +5,7 @@ OpenCode, and T3 Code's web interface. Run it locally with Docker or keep it
 available on a Linux server, with tools and configuration maintained in one
 rebuildable image.
 
-**Status:** the Debian 13 image includes Codex, pinned OpenCode v1, and T3 Code.
+**Status:** the Debian 13 image includes Codex, OpenCode v2, and T3 Code nightly.
 Compose starts T3's web server with persistent storage and a configurable host
 port. An opt-in Sysbox configuration starts an internal Docker daemon for image
 builds and container-based tests. Nested builds, Compose networking, persistence,
@@ -37,9 +37,10 @@ is `127.0.0.1:3773`; the container listens on `0.0.0.0:3773` so Docker can forwa
 that port. T3's own pairing and device authorization remain enabled. An unpaired
 browser cannot control the workspace just by knowing its address.
 
-In the base configuration, the launcher runs `t3 serve` directly. In Sysbox mode,
-it starts Docker first and manages both processes, running T3 as `agent`. Compose
-handles restart and process reaping; no systemd service is installed inside the
+The default command runs T3's service launcher in the foreground, enabling its
+in-app server updater. In Sysbox mode, the outer launcher starts Docker first
+and manages both processes, running T3 as `agent`. Compose handles restart and
+process reaping; no systemd service is installed inside the
 container. To open a shell in the base configuration:
 
 ```sh
@@ -72,16 +73,17 @@ directory ownership on Linux.
 
 ## OpenCode and T3 Code
 
-- **OpenCode 1.18.35:** native glibc binary; the amd64 build uses the baseline
+- **OpenCode 2.0.29:** native glibc binary; the amd64 build uses the baseline
   variant for CPUs without AVX2. Automatic OpenCode updates are disabled.
-- **T3 Code 0.0.45:** standalone Linux server runtime with its bundled web UI,
+- **T3 Code nightly:** standalone Linux server runtime with its bundled web UI,
   terminal support, and resource monitor. No desktop GUI installation or separate
   Node.js installation is needed.
 
-Versions and architecture-specific SHA-256 hashes live in `versions/opencode.env`
-and `versions/t3.env`. Both installers verify downloads during the image build.
-T3 0.0.45 supports OpenCode v1; the 0.0.46 train changes compatibility in favor
-of OpenCode v2. Keep these pins together when evaluating upgrades.
+OpenCode's version and architecture-specific SHA-256 hashes live in
+`versions/opencode.env`; its native packages come from npm without requiring
+Node.js. T3's installer resolves the latest nightly and verifies its archive
+against that release's `SHA256SUMS`. No exact T3 nightly is pinned in this repo.
+The 0.0.46 nightly train supports OpenCode v2; stable T3 0.0.45 does not.
 
 Configure provider authentication in the workspace environment:
 
@@ -96,10 +98,14 @@ OpenCode and/or Codex. The installed paths are `/usr/local/bin/opencode` and
 Provider access depends on the account or API credentials you configure. The
 installation checks below do not establish that a provider can run agent tasks.
 
-Update tools through their version files and an image rebuild. Do not use T3's
-remote server update button or `opencode upgrade` to change this pinned image.
-Installed tools under `/opt` and `/usr/local/bin` are root-owned; interactive
-clients should not replace them.
+Use T3's in-app server updater for T3 updates. Its selected version and complete
+runtime live in `agent-home` alongside settings, database, pairing identity, and
+credentials. Restarting, recreating, or rebuilding the container retains that
+selection. See [nightly updates](docs/updates.md).
+
+Codex, OpenCode, GitHub CLI, and Docker still update through the image. Their
+installations under `/opt` and `/usr/local/bin` remain root-owned; do not use
+`opencode upgrade` to replace the image-managed executable.
 
 ## Shared global instructions
 
@@ -176,7 +182,7 @@ must resolve from the client. A reverse proxy and TLS certificates are not
 provided by this repository; keep the upstream port bound to an interface the
 proxy can reach.
 
-Use a native client compatible with the pinned T3 server. If an app requests a
+Use a native client compatible with the installed T3 nightly. If an app requests a
 server upgrade or rejects the version, check the release's client compatibility
 before changing the image, and recheck OpenCode compatibility too. The bundled
 web UI matches its server version.
@@ -196,7 +202,7 @@ The hosted `app.t3.codes` frontend requires an HTTPS backend. For a private HTTP
 endpoint, use this container's web UI or direct pairing in a compatible native app.
 For hosted-web access, configure HTTPS with WebSocket forwarding, or use T3 Connect.
 
-See [T3 remote access](https://github.com/pingdotgg/t3code/blob/v0.0.45/docs/user/remote-access.md)
+See [T3 remote access](https://github.com/pingdotgg/t3code/blob/main/docs/user/remote-access.md)
 for the supported connection and authorization flows.
 
 ## Codex CLI
@@ -235,6 +241,10 @@ require command network access and access to the inner socket. See the
 [Codex sandbox checks and host exception](docs/sysbox.md#codex-command-sandbox).
 
 ## Recorded validation
+
+The nightly/OpenCode v2 transition has separate checks in
+[the update guide](docs/updates.md#validation). Results below describe the earlier
+stable image and Sysbox baseline; they do not prove every later nightly works.
 
 Development checks covered arm64 natively and amd64 under Docker Desktop
 emulation. All three CLI version checks passed, and T3 served its environment
@@ -349,5 +359,5 @@ compatibility constraints, and checks to run when making changes.
 - [Sysbox installation and coexistence with Docker](https://github.com/nestybox/sysbox/blob/master/docs/user-guide/install-package.md)
 - [Codex CLI](https://learn.chatgpt.com/docs/codex/cli)
 - [Codex release packages](https://github.com/openai/codex/releases)
-- [OpenCode 1.18.35](https://github.com/anomalyco/opencode/releases/tag/v1.18.35)
-- [T3 Code 0.0.45](https://github.com/pingdotgg/t3code/releases/tag/v0.0.45)
+- [OpenCode v2](https://opencode.ai/v2/docs/)
+- [T3 Code releases](https://github.com/pingdotgg/t3code/releases)

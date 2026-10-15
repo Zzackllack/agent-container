@@ -28,10 +28,14 @@ assumptions about a particular VPN, or snapshots of a contributor's devices.
   directory; installers expect this layout rather than running directly from
   the source tree.
 - `scripts/t3-pair.sh`: advertise a client-reachable origin for T3's pairing URL.
+- `scripts/t3-runtime.sh`: copy the nightly seed into the persistent home once,
+  resolve the selected CLI, and run T3's foreground service launcher.
+- `tests/t3-update.py`: actual update RPC, restart, and container recreation on
+  a disposable home; run with `uv` on the Docker host.
 - `scripts/agent-cli.sh`: Codex/OpenCode launchers loading the private Context7 key;
   native executables remain under `/opt/codex` and `/opt/opencode`.
 - `scripts/context7-setup.sh`, `tests/context7-setup.sh`: hidden/stdin key setup,
-  config preservation, and pinned-CLI validation without real credentials.
+  config preservation, and OpenCode v2 validation without real credentials.
 - `docs/github.md`, `docs/context7.md`: runtime auth/setup and verification.
 - `tests/t3-pair.sh`: checks the helper using a mock CLI without real credentials.
 - `config/docker-daemon.json`: inner daemon storage, socket, and log settings.
@@ -54,11 +58,17 @@ assumptions about a particular VPN, or snapshots of a contributor's devices.
   unsupported architectures explicitly.
 - Preserve complete upstream packages when bundled helpers are required. Codex
   and T3 cannot be reduced to just their main executable.
-- Check official release notes and upstream documentation before changing tool
-  pins. OpenCode is deliberately pinned to v1; check its compatibility with T3
-  when updating either tool. Update both architecture hashes and README versions.
-- Keep tool upgrades in the image build. Preserve disabled OpenCode auto-update
-  and root-owned installations instead of replacing binaries at runtime.
+- T3 follows nightly without an exact version pin. Resolve the current train at
+  image build time and verify the release's SHA256SUMS. `T3_REFRESH` bypasses the
+  install layer cache. Existing homes keep the updater-selected runtime.
+- OpenCode uses v2 native npm platform archives. Check upstream documentation
+  before changing pins; update both architecture hashes and README versions.
+- Codex, OpenCode, GitHub CLI, and Docker remain image-managed. T3 is the runtime
+  exception: keep complete writable installations and upstream service state in
+  `$T3CODE_HOME/runtime`; never overwrite them on restart or image rebuild.
+- Run T3's bundled `__service-launcher` in the foreground, without systemd. Its
+  protocol is currently 3. Use the real update test to detect upstream changes;
+  do not fake update capabilities or replace the upstream update protocol.
 - GitHub CLI archives are pinned in `versions/gh.env`. Keep Context7 setup on the
   hosted HTTP transport; use the existing native config editors rather than
   adding a separate Node runtime or hand-editing TOML/JSONC.
@@ -122,6 +132,7 @@ bash tests/workspace-instructions.sh agent-container:check
 docker run --rm --init \
   --mount "type=bind,source=$PWD,target=/tests,readonly" \
   agent-container:check bash /tests/tests/context7-setup.sh
+uv run tests/t3-update.py agent-container:check
 ```
 
 Validate architecture-specific changes on both Linux architectures and state

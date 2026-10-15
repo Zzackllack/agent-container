@@ -35,7 +35,7 @@ The helper configures:
 
 - Codex's `$CODEX_HOME/config.toml`: a remote `context7` server using
   `bearer_token_env_var = "CONTEXT7_API_KEY"`.
-- OpenCode's global config: a remote `context7` server with
+- OpenCode v2's global config under `mcp.servers`: a remote `context7` server with
   `Authorization: Bearer {env:CONTEXT7_API_KEY}`.
 - One key file at `~/.config/agent-container/context7.key`, mode `0600`.
 
@@ -58,10 +58,11 @@ updates and validates temporary copies. Invalid configuration stops setup before
 publishing either config or a new key. Private pre-change backups are placed
 under `~/.config/agent-container/backups/` and the helper prints their location.
 
-Supported OpenCode files are `opencode.jsonc`, `opencode.json`, or legacy
-`config.json` in its global config directory. If more than one exists, consolidate
-those global layers first so an old entry cannot override the new one. The helper
-also rejects `OPENCODE_CONFIG`, `OPENCODE_CONFIG_DIR`, and
+Supported OpenCode v2 files are `opencode.jsonc` or `opencode.json` in its global
+config directory. V2 ignores legacy `config.json`; rename that file to
+`opencode.jsonc` before setup when it is your only global configuration. If more
+than one exists, consolidate those files first so an old entry cannot override
+the new one. The helper also rejects `OPENCODE_CONFIG`, `OPENCODE_CONFIG_DIR`, and
 `OPENCODE_CONFIG_CONTENT` overrides; unset them before using this global setup.
 `CODEX_HOME` and `XDG_CONFIG_HOME` paths are respected. Project-level MCP settings
 can still override global configuration.
@@ -71,7 +72,9 @@ backups retain the preceding key/configs. This is not a multi-file transaction:
 if a disk or permission error interrupts publication, restore the printed backup
 or rerun setup after fixing the error. Start fresh agent/provider sessions after
 configuration changes; restart T3 providers/server if an existing process keeps
-its earlier MCP configuration.
+its earlier MCP configuration. For OpenCode's separately managed background
+service, run `opencode service restart` after changing its key. A T3-owned
+OpenCode provider server needs a fresh provider/server process too.
 
 ## Verify and use
 
@@ -80,7 +83,9 @@ docker compose exec --user agent workspace codex mcp list
 docker compose exec --user agent workspace opencode mcp list
 ```
 
-Codex's list confirms registration; OpenCode's list attempts server connections.
+Codex's list confirms registration. OpenCode v2 activates configuration plugins
+asynchronously, so an immediate `mcp list` can be empty. Check again in a live
+OpenCode/provider session after initialization.
 Avoid sharing raw config/debug output, which can contain resolved headers or
 other credentials. These checks differ from completing an authenticated tool
 call. In a fresh Codex/OpenCode session, ask:
@@ -105,17 +110,18 @@ command filesystem sandbox or publishing an inbound port.
 codex mcp remove context7
 ```
 
-Remove the `mcp.context7` entry from OpenCode's global config and delete the
+Remove the `mcp.servers.context7` entry from OpenCode's global config and delete the
 stored key file if neither tool needs it. Revoke the key in Context7 if needed;
 private setup backups still contain previous key material until removed.
 
 ## Recorded validation
 
-The setup tests use fake keys and verify configuration parsing by the pinned
+The setup tests use fake keys and verify configuration parsing by the installed
 CLIs, preserved settings/comments, rotation, private file permissions, and
-failure behavior. They do not establish real-key authentication, a Context7
-query, or an authenticated agent task through T3.
+failure behavior. A live OpenCode v2 server verifies key loading and environment
+overrides after configuration plugins activate. They do not establish real-key
+authentication, a Context7 query, or an authenticated agent task through T3.
 
 Image builds and those setup tests passed on native arm64 and emulated amd64.
-A separate local mock MCP handshake on arm64 verified that OpenCode sent the
-expected fake bearer token.
+The earlier v1 image also passed a local mock HTTP MCP bearer-header check;
+that result does not by itself validate v2.
