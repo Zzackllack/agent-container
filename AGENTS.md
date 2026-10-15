@@ -19,8 +19,8 @@ configuration dashboard. Keep it portable across unrelated Docker hosts.
   volume; rebuilding must not overwrite it. See [updates](docs/updates.md).
 - Verify downloaded packages and both architecture hashes; keep new build inputs
   in the `.dockerignore` allowlist. See [installer rules](docs/development.md#image-and-installer-changes).
-- Keep Git-synced instructions host-managed and read-only. Preserve existing
-  local files and the last-good publication. See [instruction sync](docs/instructions.md).
+- Manage instructions as local files in persistent volumes through the dashboard.
+  Preserve existing files; reject symlinks and paths outside the allowlist.
 - Keep dashboard file access allowlisted, with private backups and revision
   checks; do not expose auth stores, arbitrary files, or command execution.
   See [dashboard boundaries](docs/dashboard.md).

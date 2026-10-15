@@ -125,15 +125,6 @@ export class Files {
         scope: "global",
         agents: ["OpenCode"],
       })),
-      {
-        id: "shared:published",
-        label: "Git-synced rules",
-        path: this.config.published,
-        kind: "instructions",
-        format: "markdown",
-        scope: "shared",
-        agents: ["Codex", "OpenCode"],
-      },
     ];
   }
   private definition(id: string): Definition {
@@ -161,8 +152,8 @@ export class Files {
       agents: ["Codex", "OpenCode"],
     };
   }
-  // Do not follow writable paths through symlinked parents. Git-published links
-  // are handled explicitly as read-only documents instead of replacing the link.
+  // Do not follow links through parent directories or replace linked files.
+  // Instructions and provider configuration must stay inside the allowlist.
   private async parents(path: string, root: string): Promise<void> {
     if (!inside(root, path))
       throw new FileError(403, "Path is outside the configured volume.");
@@ -192,38 +183,27 @@ export class Files {
     const base: DocumentInfo = {
       ...definition,
       exists: false,
-      writable: definition.scope !== "shared",
+      writable: true,
       source: "local",
     };
-    if (definition.scope === "shared") {
-      base.source = "git";
-      base.reason =
-        "Published from Git. Edit the source repository; the host sync publishes it here.";
-    } else {
-      try {
-        await this.parents(definition.path, this.root(definition));
-      } catch (error) {
-        return { ...base, writable: false, reason: (error as Error).message };
-      }
+    try {
+      await this.parents(definition.path, this.root(definition));
+    } catch (error) {
+      return { ...base, writable: false, reason: (error as Error).message };
     }
     try {
       const info = await lstat(definition.path);
       if (info.isSymbolicLink()) {
         const target = await realpath(definition.path).catch(() => "");
-        const git =
-          target ===
-          (await realpath(this.config.published).catch(
-            () => this.config.published,
-          ));
+
         return {
           ...base,
           exists: !!target,
           writable: false,
-          source: git ? "git" : "linked",
+          source: "linked",
           linkTarget: target,
-          reason: git
-            ? "Uses the read-only rules published by the host Git sync."
-            : "Linked file. Edit its original source; this dashboard does not replace symlinks.",
+          reason:
+            "Linked file. Replace it with a local file to edit it in the dashboard.",
         };
       }
       if (!info.isFile())
@@ -297,7 +277,6 @@ export class Files {
     );
     return {
       documents: documents.filter((doc) => {
-        if (doc.id === "shared:published") return doc.exists;
         if (doc.id.startsWith("opencode:config:") && !doc.exists)
           return !openCodeConfigExists && doc.id.endsWith(":jsonc");
         return true;
@@ -309,21 +288,14 @@ export class Files {
     const definition = this.definition(id);
     const info = await this.inspect(definition);
     if (!info.exists) return { ...info, content: "", revision: null };
-    let path = definition.path;
-    if (info.linkTarget) {
-      path = info.linkTarget;
-      const published = await realpath(this.config.published).catch(
-        () => this.config.published,
+    const path = definition.path;
+    if (info.source === "linked") {
+      throw new FileError(
+        403,
+        "Linked files cannot be read or edited through the dashboard.",
       );
-      // A linked AGENTS.md must not expose credentials elsewhere in the home.
-      // The host's published instruction file is the only supported link target.
-      if (path !== published) {
-        throw new FileError(
-          403,
-          "Only links to the published Git instruction file can be read.",
-        );
-      }
-    } else if (info.reason && info.source === "local" && !info.writable) {
+    }
+    if (info.reason && !info.writable) {
       // A rejected parent must not become a read escape through a symlink.
       await this.parents(path, this.root(definition));
     }

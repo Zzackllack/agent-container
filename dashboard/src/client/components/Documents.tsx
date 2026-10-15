@@ -4,7 +4,6 @@ import {
   ChevronRight,
   FileCode2,
   FilePlus2,
-  GitBranch,
   History,
   LockKeyhole,
   Save,
@@ -178,26 +177,18 @@ export function Documents({
               aria-label="Find a file"
             />
           </label>
-          {(["shared", "global", "project"] as const).map((scope) => {
+          {(["global", "project"] as const).map((scope) => {
             const group = candidates.filter((file) => file.scope === scope);
             return group.length ? (
               <div className="file-group" key={scope}>
-                <h2>
-                  {scope === "shared"
-                    ? "Shared source"
-                    : scope === "global"
-                      ? "Agent defaults"
-                      : "Projects"}
-                </h2>
+                <h2>{scope === "global" ? "Agent defaults" : "Projects"}</h2>
                 {group.map((file) => (
                   <button
                     key={file.id}
                     className={`file-item ${selected === file.id ? "selected" : ""}`}
                     onClick={() => select(file.id)}
                   >
-                    {file.source === "git" ? (
-                      <GitBranch size={16} />
-                    ) : file.exists ? (
+                    {file.exists ? (
                       <FileCode2 size={16} />
                     ) : (
                       <FilePlus2 size={16} />
@@ -207,11 +198,9 @@ export function Documents({
                       <small>
                         {file.scope === "project"
                           ? "AGENTS.md"
-                          : file.source === "git"
-                            ? "Git-managed"
-                            : file.exists
-                              ? file.format.toUpperCase()
-                              : "Create file"}
+                          : file.exists
+                            ? file.format.toUpperCase()
+                            : "Create file"}
                       </small>
                     </span>
                     {!file.writable ? <LockKeyhole size={12} /> : null}
@@ -277,21 +266,13 @@ export function Documents({
                     </button>
                   ))}
                 </div>
-                <span
-                  className={`badge ${document.source === "git" ? "blue" : ""}`}
-                >
-                  {document.source === "git" ? (
-                    <GitBranch size={12} />
-                  ) : document.writable ? (
+                <span className="badge">
+                  {document.writable ? (
                     <ShieldCheck size={12} />
                   ) : (
                     <LockKeyhole size={12} />
                   )}
-                  {document.source === "git"
-                    ? "Git-managed"
-                    : document.writable
-                      ? "Local file"
-                      : "Read-only"}
+                  {document.writable ? "Local file" : "Read-only"}
                 </span>
               </div>
               {!document.writable ? (
@@ -372,9 +353,7 @@ export function Documents({
               <dd>
                 {document.scope === "global"
                   ? "Agent-wide default"
-                  : document.scope === "shared"
-                    ? "Shared Git source"
-                    : "Project instructions"}
+                  : "Project instructions"}
               </dd>
               <dt>Location</dt>
               <dd className="path-detail">{document.path}</dd>

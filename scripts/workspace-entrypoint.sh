@@ -1,18 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-case "${WORKSPACE_INSTRUCTIONS_ENABLED:-false}" in
-    false) ;;
-    true)
-        if [[ $(id -u) == 0 ]]; then
-            setpriv --reuid=agent --regid=agent --init-groups -- workspace-instructions
-        else
-            workspace-instructions
-        fi
-        ;;
-    *) echo "WORKSPACE_INSTRUCTIONS_ENABLED must be true or false." >&2; exit 1 ;;
-esac
-
 case "${WORKSPACE_DOCKER_ENABLED:-false}" in
     false) exec "$@" ;;
     true) ;;

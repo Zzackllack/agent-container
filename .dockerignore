@@ -13,7 +13,6 @@
 !scripts/t3-pair.sh
 !scripts/workspace-entrypoint.sh
 !scripts/workspace-healthcheck.sh
-!scripts/workspace-instructions.sh
 !config/
 !config/docker-daemon.json
 !versions/
@@ -37,3 +36,6 @@
 !dashboard/public/favicon-16.png
 !dashboard/public/favicon-32.png
 !dashboard/public/apple-touch-icon.png
+# Local build output must not overwrite dependencies installed in the image.
+dashboard/node_modules/
+dashboard/dist/

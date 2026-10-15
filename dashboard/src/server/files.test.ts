@@ -21,7 +21,6 @@ async function fixture() {
     home: join(root, "home"),
     workspace: join(root, "workspace"),
     state: join(root, "state"),
-    published: join(root, "published/AGENTS.md"),
     t3Internal: "http://127.0.0.1:1",
     t3Public: "http://localhost:3773",
     versions: join(root, "versions"),
@@ -33,10 +32,12 @@ async function fixture() {
     mkdir(join(root, "published")),
   ]);
   await writeFile(join(config.home, ".codex/AGENTS.md"), "# Original\n");
-  await writeFile(config.published, "# Git rules\n");
+  const published = join(root, "published/AGENTS.md");
+  await writeFile(published, "# Legacy rules\n");
   return {
     config,
     root,
+    published,
     files: new Files(config),
     cleanup: () => rm(root, { recursive: true, force: true }),
   };
@@ -73,33 +74,31 @@ test("edits preserve revisions and private backups; stale writes are rejected", 
   }
 });
 
-test("Git sources, symlinks, path traversal, and credential files cannot be written", async () => {
+test("symlinks, removed Git sources, path traversal, and credential files are rejected", async () => {
   const f = await fixture();
   try {
     await symlink(
-      f.config.published,
+      f.published,
       join(f.config.home, ".config/opencode/AGENTS.md"),
     );
-    const linked = await f.files.read("opencode:instructions");
-    assert.equal(linked.source, "git");
-    assert.equal(linked.content, "# Git rules\n");
-    await assert.rejects(
-      f.files.save(linked.id, "replace", linked.revision),
-      /read-only/,
+    const inventory = await f.files.inventory();
+    const linked = inventory.documents.find(
+      (doc) => doc.id === "opencode:instructions",
     );
+    assert.equal(linked?.source, "linked");
+    assert.equal(linked?.writable, false);
+    await assert.rejects(f.files.read("opencode:instructions"), /Linked files/);
     await assert.rejects(
-      f.files.save("shared:published", "replace", null),
-      /Edit the source/,
+      f.files.save("opencode:instructions", "replace", null),
+      /Linked files/,
     );
+    await assert.rejects(f.files.read("shared:published"), /Unknown document/);
     await writeFile(join(f.root, "outside.txt"), "private");
     await symlink(
       join(f.root, "outside.txt"),
       join(f.config.home, ".codex/AGENTS.override.md"),
     );
-    await assert.rejects(
-      f.files.read("codex:override"),
-      /Only links to the published/,
-    );
+    await assert.rejects(f.files.read("codex:override"), /Linked files/);
     await writeFile(join(f.config.home, ".codex/auth.json"), "private");
     await symlink(
       join(f.config.home, ".codex/auth.json"),
@@ -107,7 +106,7 @@ test("Git sources, symlinks, path traversal, and credential files cannot be writ
     );
     await assert.rejects(
       f.files.read("project:project/AGENTS.md"),
-      /Only links to the published/,
+      /Linked files/,
     );
     await symlink(f.root, join(f.config.workspace, "escape"));
     const escaped = await f.files.read("project:escape/AGENTS.md");

@@ -6,7 +6,7 @@ runtime responsibilities. Read the relevant guide before changing one:
 - [Architecture and isolation](architecture.md): scope and trust boundaries.
 - [Sysbox](sysbox.md): daemon settings, nested namespaces, host verification.
 - [Nightly updates](updates.md): persistent runtime and launcher protocol.
-- [Shared instructions](instructions.md): host publication and symlink handling.
+- [Agent instructions](instructions.md): local files and legacy migration.
 - [Dashboard](dashboard.md): file API boundaries, frontend development and tests.
 - [Recorded validation](validation.md): historical evidence and unverified behavior.
 
@@ -56,18 +56,16 @@ runtime responsibilities. Read the relevant guide before changing one:
   Keep socket access on the primary `agent` group; supplementary groups are
   unmapped in Codex's nested user namespace. Docker access controls the workspace
   and can perform writes beyond Codex's direct filesystem permissions.
-- Keep instruction synchronization on the host; mount only its published
-  directory read-only. Do not bake personal rules or Git credentials into the
-  image, mount the repository cache, overwrite existing global files, or start
-  cron inside the workspace. Keep failed syncs from replacing the last-good file.
+- Keep instruction files in the persistent home/workspace volumes. The dashboard
+  edits allowlisted local files; do not add background Git sync or cron.
 - Do not commit `.env`, provider credentials, home-volume contents, or real
   pairing URLs. Mint grants through T3 and preserve the credential fragment when
   rewriting an origin; do not replace T3's authentication mechanism.
   The configuration dashboard has its own password/session, independent of T3.
   Keep it loopback-bound by default and never use it to bypass T3 authorization.
-- Preserve Git-managed instruction links as read-only in the dashboard. Never
-  expose arbitrary home files, authentication stores, or command execution via
-  its API. Use private backups and revision checks before replacing local files.
+- Reject linked instruction files in the dashboard. Never expose arbitrary home
+  files, authentication stores, or command execution via its API. Use private
+  backups and revision checks before replacing local files.
 - Accept Context7 keys through a hidden prompt or stdin, never command arguments
   or logs. Keep the key, configs, and backups private; test only with fake keys.
   Avoid displaying raw provider config/debug output with resolved credentials.
@@ -97,10 +95,6 @@ docker run --rm --init --user 0:0 \
 docker run --rm --init --user 0:0 \
   --mount "type=bind,source=$PWD,target=/tests,readonly" \
   agent-container:check bash /tests/tests/agent-cli.sh
-docker run --rm --init --user 0:0 \
-  --mount "type=bind,source=$PWD,target=/tests,readonly" \
-  agent-container:check bash /tests/tests/sync-instructions.sh
-bash tests/workspace-instructions.sh agent-container:check
 docker run --rm --init \
   --mount "type=bind,source=$PWD,target=/tests,readonly" \
   agent-container:check bash /tests/tests/context7-setup.sh
@@ -135,15 +129,6 @@ docker build -f dashboard/Dockerfile -t agent-container-dashboard:check .
 uv run tests/dashboard.py agent-container-dashboard:check
 ```
 
-For instruction-overlay changes, also validate with an existing publication:
-
-```sh
-AGENT_INSTRUCTIONS_DIRECTORY=/path/to/published \
-  docker compose -f compose.yaml -f compose.sysbox.yaml -f compose.instructions.yaml config --quiet
-```
-
-The publication must already exist for runtime mount checks. Use fixture keys,
-accounts, paths and disposable volumes; do not use real credentials in tests.
 Documentation-only changes need link/anchor and Markdown rendering checks,
 not a full image rebuild.
 

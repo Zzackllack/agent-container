@@ -35,8 +35,7 @@ docker compose exec dashboard cat /var/lib/agent-dashboard/password
 Use Compose 2.24.4 or newer. The image override uses `!reset` to remove local
 build definitions; the base source-build setup remains available without it.
 Set access bindings as described in [remote access](remote-access.md) and the
-[dashboard guide](dashboard.md). Add `compose.instructions.yaml` last if using
-[Git-synchronized rules](instructions.md).
+[dashboard guide](dashboard.md). Manage agent instructions through the [dashboard](dashboard.md).
 
 ## Tags and updates
 

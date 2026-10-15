@@ -37,7 +37,7 @@ starts without an internal Docker daemon.
 - [Configuration dashboard](docs/dashboard.md): instructions, settings, backups.
 - [Remote access](docs/remote-access.md): web/native clients, HTTPS, T3 Connect.
 - [Persistent storage](docs/storage.md) and [updates](docs/updates.md).
-- [All guides](docs/README.md): GitHub, Context7, Git-synced rules, development, validation.
+- [All guides](docs/README.md): GitHub, Context7, development, validation.
 
 Saved state survives recreation. **`docker compose down -v` deletes the volumes.**
 Sysbox shares the host kernel; see [isolation limits](docs/architecture.md#isolation-and-practical-limits).

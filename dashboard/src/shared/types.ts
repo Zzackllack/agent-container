@@ -5,11 +5,11 @@ export interface DocumentInfo {
   path: string;
   kind: "instructions" | "config";
   format: Format;
-  scope: "shared" | "global" | "project";
+  scope: "global" | "project";
   agents: string[];
   exists: boolean;
   writable: boolean;
-  source: "local" | "git" | "linked";
+  source: "local" | "linked";
   reason?: string;
   linkTarget?: string;
 }

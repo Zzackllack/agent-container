@@ -76,11 +76,9 @@ export function Overview({
                   <FileCode2 size={17} />
                   {file.label}
                 </span>
-                <span
-                  className={`badge ${file.source === "git" ? "blue" : ""}`}
-                >
-                  {file.source === "git"
-                    ? "Git-managed"
+                <span className="badge">
+                  {file.source === "linked"
+                    ? "Linked file"
                     : file.exists
                       ? "Local file"
                       : "Not created"}

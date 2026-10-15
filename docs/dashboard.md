@@ -39,7 +39,6 @@ does not change provider credentials or mint T3 pairing grants.
 | `/workspace/**/AGENTS.md` | Workspace, repository, and nested project instructions |
 | `/home/agent/.codex/config.toml` | Codex configuration |
 | `/home/agent/.config/opencode/opencode.json` or `.jsonc` | OpenCode configuration |
-| `/etc/agent-instructions/AGENTS.md` | Optional read-only Git publication |
 
 T3 uses the installed providers; edit their instruction files here. This first
 version does not edit T3's database/settings, authentication files, host settings,
@@ -73,14 +72,13 @@ workspace root and detected Git repository roots. The editor limit is 128 KiB.
 Start a fresh agent session after instruction edits. Configuration changes may
 also require restarting the affected provider or workspace service.
 
-## Git-synchronized instructions
+## Instruction files
 
-With [host Git synchronization](instructions.md) enabled, Compose mounts the
-published directory into both services read-only. Global instruction symlinks
-and the shared source are shown as Git-managed. Edit the source Git repository
-and let the existing host sync publish it; the dashboard does not replace those
-links, write into the publication, run Git, or start cron. Other symlink targets
-are not readable/editable through the dashboard.
+Global instructions are local files in the persistent home volume. Use the
+Codex and OpenCode entries to edit each provider's defaults; project rules live
+in the workspace. No separate rules repository or scheduled pull is needed.
+See [agent instructions](instructions.md) for locations and migration from older
+Git-synced setups. Symlinks are shown as linked and cannot be read or edited.
 
 ## Storage and access
 
@@ -147,8 +145,7 @@ backups, complete container recreation, session persistence, and logout.
 
 Local validation also covers API file boundaries, symlink/credential-path
 rejection, JSONC/TOML syntax, project discovery, and cross-origin writes.
-Browser checks cover the editor, review/save, preview, history, read-only Git
-sources, and responsive layout with fixture files. Docker builds run on arm64
+Browser checks cover the editor, review/save, preview, history, and responsive layout with fixture files. Docker builds run on arm64
 natively and amd64 under emulation. The base Compose stack is checked with an
 isolated project; sharing volumes with a live Sysbox workspace and access from
 remote devices remain separate deployment checks.

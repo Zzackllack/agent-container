@@ -59,7 +59,6 @@ COPY config/docker-daemon.json /etc/docker/daemon.json
 COPY --chmod=0755 scripts/t3-pair.sh /usr/local/bin/t3-pair
 COPY --chmod=0755 scripts/workspace-entrypoint.sh /usr/local/bin/workspace-entrypoint
 COPY --chmod=0755 scripts/workspace-healthcheck.sh /usr/local/bin/workspace-healthcheck
-COPY --chmod=0755 scripts/workspace-instructions.sh /usr/local/bin/workspace-instructions
 
 # Workspace root is useful for apt and the internal Docker daemon.
 # Keep interactive tools under an ordinary user; sudo stays inside the workspace.

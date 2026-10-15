@@ -4,6 +4,28 @@ Historical results below describe particular images and hosts, not a guarantee
 for the currently deployed nightly. To reproduce relevant checks, see the
 [development guide](development.md#verification).
 
+## Root-exec authentication repair and instruction cleanup (2026-10-15)
+
+On the live Sysbox workspace, Codex 0.161.0 had a root-owned `0600` auth file.
+`agent` received `Permission denied (os error 13)` while root reported an existing
+ChatGPT login. Changing only root-owned entries under `.codex` to `agent` restored
+`codex login status` without changing credentials or restarting the workspace.
+The root-safe CLI launcher was also applied to that running container; both root
+and agent invocations then reported the existing login without permission warnings.
+That launcher hotfix is in the container layer until a new image is published
+and deployed. The ownership repair is in the persistent home volume.
+
+Local arm64 checks passed for both image builds, tool startup, lifecycle, pairing,
+fake-key Context7 setup, and a real Codex fake-key login checking UID/GID 1000
+and mode `0600`. Dashboard type checks, API tests, production build and packaged
+volume/recreation tests passed after removing Git publication handling. Both
+Compose configurations and the host-specific deployment file validated. The
+dashboard build retains its existing large editor-chunk warning.
+
+These changes do not yet have new GHCR publication or deployed dashboard
+evidence. Login status does not prove an authenticated model request, and no
+GPG private key or signing operation was provisioned or tested.
+
 ## Published images (2026-10-15)
 
 The [first publishing run](https://github.com/Zzackllack/agent-container/actions/runs/38738978164)

@@ -13,9 +13,9 @@
 
 - [Sysbox](sysbox.md): nested Docker on a compatible Linux host.
 - [Configuration dashboard](dashboard.md): edit rules and provider config in the browser.
-- [GitHub CLI](github.md): login, Git credentials, automation.
+- [GitHub CLI](github.md): login, Git credentials, commit signing.
 - [Context7 MCP](context7.md): configure documentation access for both agents.
-- [Shared global instructions](instructions.md): Git publication and host-side scheduling.
+- [Agent instructions](instructions.md): dashboard editing and migration from Git sync.
 
 ## Understand and contribute
 

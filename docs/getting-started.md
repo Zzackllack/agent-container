@@ -66,7 +66,7 @@ covers instruction/configuration editing, backups, and access settings.
 - [Remote web/native access](remote-access.md): LAN/VPN bindings, HTTPS, T3 Connect.
 - [GitHub CLI](github.md): login and Git authentication.
 - [Context7 MCP](context7.md): configure Codex and OpenCode with your key.
-- [Shared instructions](instructions.md): host-side Git sync and cron.
+- [Agent instructions](instructions.md): global and project rules in the dashboard.
 - [Storage](storage.md): what survives recreation and what to back up.
 - [Updates](updates.md): T3 nightly upgrades and existing home volumes.
 
