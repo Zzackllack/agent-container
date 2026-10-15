@@ -1,3 +1,5 @@
+<img align="right" src="assets/logo.png" width="160" height="160" alt="agent-container logo" />
+
 # agent-container
 
 A containerized development workspace for AI coding agents, with Codex CLI,
@@ -10,6 +12,8 @@ Compose starts T3's web server with persistent storage and a configurable host
 port. An opt-in Sysbox configuration starts an internal Docker daemon for image
 builds and container-based tests. Nested builds, Compose networking, persistence,
 and Codex sandboxed Docker commands have been verified on a Linux Sysbox host.
+
+<br clear="right" />
 
 ## Build and use
 

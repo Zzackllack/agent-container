@@ -115,14 +115,11 @@ h2 {
   margin-top: 3px;
 }
 .brand-mark {
-  width: 38px;
-  height: 40px;
-  border-radius: 10px;
-  display: grid;
-  place-items: center;
-  background: #fff;
-  color: #335cff;
-  border: 1px solid #dce4ef;
+  width: 44px;
+  height: 44px;
+  display: block;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 nav {
   display: grid;
@@ -861,8 +858,8 @@ nav {
   margin: auto;
 }
 .login-panel > .brand-mark {
-  width: 50px;
-  height: 52px;
+  width: 80px;
+  height: 80px;
   margin-bottom: 16px;
 }
 .login-brand {
@@ -1042,8 +1039,8 @@ nav {
     display: none;
   }
   .brand-mark {
-    width: 30px;
-    height: 31px;
+    width: 36px;
+    height: 36px;
   }
   nav {
     margin-top: 17px;

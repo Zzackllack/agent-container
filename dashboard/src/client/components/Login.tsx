@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
-import { Box, ArrowRight, KeyRound } from "lucide-react";
+import { ArrowRight, KeyRound } from "lucide-react";
 import { api } from "../api";
+import { Logo } from "./Logo";
 
 export function Login({ onLogin }: { onLogin: () => void }) {
   const [password, setPassword] = useState("");
@@ -23,9 +24,7 @@ export function Login({ onLogin }: { onLogin: () => void }) {
   return (
     <main className="login-page">
       <div className="login-panel">
-        <div className="brand-mark">
-          <Box size={28} strokeWidth={1.6} />
-        </div>
+        <Logo className="brand-mark" />
         <span className="login-brand">agent-container</span>
         <h1>
           Your workspace,

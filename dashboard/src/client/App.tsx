@@ -14,6 +14,7 @@ import { Login } from "./components/Login";
 import { Overview } from "./components/Overview";
 import { Documents } from "./components/Documents";
 import { Modal } from "./components/Dialog";
+import { Logo } from "./components/Logo";
 
 type Page = "overview" | "instructions" | "config";
 export default function App() {
@@ -85,9 +86,7 @@ export default function App() {
             void navigate("overview");
           }}
         >
-          <span className="brand-mark">
-            <Box size={24} strokeWidth={1.6} />
-          </span>
+          <Logo className="brand-mark" />
           <span>
             agent-container<small>Workspace settings</small>
           </span>

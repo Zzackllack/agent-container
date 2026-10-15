@@ -32,3 +32,8 @@
 !dashboard/index.html
 !dashboard/src/
 !dashboard/src/**
+!dashboard/public/
+!dashboard/public/logo.png
+!dashboard/public/favicon-16.png
+!dashboard/public/favicon-32.png
+!dashboard/public/apple-touch-icon.png
