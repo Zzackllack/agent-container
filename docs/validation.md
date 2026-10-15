@@ -15,7 +15,9 @@ trees, caches inside the home volume, `JAVA_HOME`, and a working `python3 -m
 venv`), the entrypoint, agent CLI, Git instruction sync, `uv run
 tests/t3-update.py`, and fake-key Context7 tests. Chromium from a Playwright
 cache mounted read-only launched headless and wrote a screenshot inside the
-container, with fontconfig resolving DejaVu for sans and monospace.
+container, with fontconfig resolving DejaVu for sans and monospace. A compiled
+Swing probe then ran under the bundled `xvfb-run`, reporting `headless=false`
+and a realized frame, which exercises the AWT stack as well as Xvfb.
 
 Not covered: an arm64 build of the new toolchains, Sysbox operation with the
 larger image, and authenticated agent tasks. Docker's build checks reported no

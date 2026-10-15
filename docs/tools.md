@@ -37,7 +37,8 @@ uv manages its own Python builds in the home volume (`uv python install
 Java comes from the Debian repository rather than an upstream archive: trixie's
 `openjdk-25-jdk` is the same 25.0.4.1 upstream release as current Eclipse
 Temurin, and Debian security updates keep the patch level current. It is a full
-JDK, so `javac`, JShell, and Swing will not surprise you. Gradle is
+JDK, so `javac`, JShell, and Swing will not surprise you; `xvfb-run` with the
+bundled Xvfb runs AWT/Swing tests without an external display. Gradle is
 deliberately absent: Gradle projects ship a `./gradlew` wrapper, which downloads
 its own distribution on first use.
 
@@ -70,10 +71,12 @@ skipped instead of failing. Published tags always build the default variant.
 - **Build:** build-essential, cmake, pkg-config, libssl-dev, protobuf-compiler
 - **Data:** sqlite3, postgresql-client, jq
 - **Diagnostics:** shellcheck, htop, process and network tools, openssl
-- **Headless browsers:** the shared libraries Chromium needs (`libnss3`, `libgbm1`,
-  `libasound2`, ATK, cups, X11 bits) plus `fontconfig`, DejaVu, Liberation fonts
-  and Xvfb. Playwright or Puppeteer can then launch a browser after downloading
-  its own browser build; the browsers themselves are not baked in.
+- **Headless browsers and displays:** the shared libraries Chromium needs
+  (`libnss3`, `libgbm1`, `libasound2`, ATK, cups, X11 bits) plus `fontconfig`,
+  DejaVu, Liberation fonts, Xvfb with `xauth`. `xvfb-run` therefore works out of
+  the box for headless browser or Swing tests. Playwright or Puppeteer can launch
+  a browser after downloading its own browser build; the browsers themselves are
+  not baked in.
 
 Debian ships `fd` as `fdfind` and `bat` as `batcat`; the image adds the upstream
 names in `/usr/local/bin`. GitHub CLI is installed from a checksum-pinned

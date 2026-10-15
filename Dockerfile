@@ -64,6 +64,7 @@ RUN apt-get update \
         tree \
         unzip \
         wget \
+        xauth \
         xvfb \
         xz-utils \
         zip \
