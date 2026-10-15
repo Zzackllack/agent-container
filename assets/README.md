@@ -1,7 +1,7 @@
 # Project artwork
 
-`logo.png` is the original approved project artwork. The README uses this file;
-the dashboard serves smaller copies from `dashboard/public/`:
+`logo.png` is the original approved project artwork. The dashboard serves smaller
+copies from `dashboard/public/`:
 
 - `logo.png`: 256 × 256, for the login page and navigation.
 - `favicon-16.png` and `favicon-32.png`: browser tab icons.
@@ -20,3 +20,8 @@ sips -z 180 180 assets/logo.png --out dashboard/public/apple-touch-icon.png
 
 If asset names change, update `dashboard/index.html`, the shared `Logo` component,
 and the Docker build-context allowlist together.
+
+`banner.png` is the wide README header, generated with the built-in imagegen tool
+using `logo.png` as the mascot reference. It keeps the introductory paragraphs
+outside the image so they remain readable and selectable. The generation prompt
+is recorded in [banner-prompt.md](banner-prompt.md).

@@ -1,18 +1,11 @@
 # agent-container
 
-<table>
-<tr>
-<td valign="top">
-<p>A containerized development workspace for AI coding agents, with Codex CLI,
+![agent-container — AI coding agents. Contained.](assets/banner.png)
+
+A containerized development workspace for AI coding agents, with Codex CLI,
 OpenCode, and T3 Code's web interface. Run it locally with Docker or keep it
 available on a Linux server, with tools and configuration maintained in one
-rebuildable image.</p>
-</td>
-<td width="200" align="center" valign="top">
-<img src="assets/logo.png" width="160" height="160" alt="agent-container logo" />
-</td>
-</tr>
-</table>
+rebuildable image.
 
 ## Build and use
 
