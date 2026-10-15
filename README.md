@@ -1,6 +1,6 @@
-<img align="right" src="assets/logo.png" width="160" height="160" alt="agent-container logo" />
-
 # agent-container
+
+<img align="right" src="assets/logo.png" width="160" height="160" alt="agent-container logo" />
 
 A containerized development workspace for AI coding agents, with Codex CLI,
 OpenCode, and T3 Code's web interface. Run it locally with Docker or keep it
