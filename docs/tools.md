@@ -8,6 +8,12 @@ APT is supplied by Debian; install extra packages with `sudo apt-get update` and
 `sudo apt-get install ...`. Package changes made inside a container disappear
 when that container is removed; add lasting tools to the Dockerfile.
 
+For example, an agent can run `sudo apt-get update` followed by
+`sudo apt-get install -y python3 python3-venv`. The `agent` user has passwordless
+sudo. Language-specific tools such as pnpm and uv are not preinstalled in the
+workspace; install those when needed or extend the workspace image for repeatable
+project toolchains. The dashboard's Node runtime belongs to its separate image.
+
 Docker Engine/CLI **29.8.2**, containerd **2.3.6**, Buildx **0.37.1**, and Compose
 **5.6.0** are installed from Docker's signed Debian repository with exact package
 versions in `versions/docker.env`. The repository signing key is checksum-pinned.

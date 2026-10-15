@@ -1,0 +1,7 @@
+services:
+  workspace:
+    build: !reset null
+    image: ${WORKSPACE_IMAGE:-ghcr.io/zzackllack/agent-container:latest}
+  dashboard:
+    build: !reset null
+    image: ${DASHBOARD_IMAGE:-ghcr.io/zzackllack/agent-container-dashboard:latest}

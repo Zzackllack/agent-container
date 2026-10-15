@@ -10,6 +10,7 @@ and integration tests without mounting the host Docker socket.
 ## Quick start
 
 Requires Docker with Compose and Linux container support (`amd64` or `arm64`).
+Use the [published images](docs/images.md) to skip local builds.
 From the repository root:
 
 ```sh

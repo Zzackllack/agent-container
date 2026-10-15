@@ -3,6 +3,7 @@
 ## Run and configure
 
 - [Getting started](getting-started.md): start Compose, pair T3, open a shell, log in.
+- [Published images](images.md): GHCR downloads, multi-platform tags, pull-only Compose.
 - [Tools and providers](tools.md): installed versions, Codex/OpenCode authentication.
 - [Remote access](remote-access.md): bindings, native clients, HTTPS, T3 Connect.
 - [Persistent storage](storage.md): sessions, volumes, recreation, backup boundaries.

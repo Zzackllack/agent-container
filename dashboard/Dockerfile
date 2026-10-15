@@ -4,7 +4,7 @@ RUN npm install --global pnpm@12.11.2
 COPY dashboard/package.json dashboard/pnpm-lock.yaml dashboard/pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY dashboard/ ./
-RUN pnpm build
+RUN pnpm test && pnpm build
 
 FROM node:24-bookworm-slim
 ENV NODE_ENV=production PORT=3780

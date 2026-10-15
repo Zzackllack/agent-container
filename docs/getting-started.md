@@ -1,5 +1,8 @@
 # Start the workspace
 
+For prebuilt GHCR images, follow [published images](images.md). The commands
+below build from source.
+
 Requirements: Docker Engine or Docker Desktop with Docker Compose v2 and support
 for Linux containers. The image supports `linux/amd64` and `linux/arm64`.
 Clone this repository and run the following commands from its root:
