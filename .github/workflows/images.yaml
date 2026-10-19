@@ -79,7 +79,7 @@ jobs:
         if: matrix.image == 'agent-container'
         run: |
           docker run --rm --init agent-container:test sh -ec \
-            'sudo -n true; command -v apt-get; codex --version; opencode --version; t3 --version; gh --version; docker --version; docker compose version; docker buildx version; sudo dockerd --validate'
+            'sudo -n true; command -v apt-get; codex --version; opencode --version; t3 --version; gh --version; cloudflared --version; docker --version; docker compose version; docker buildx version; sudo dockerd --validate'
           docker run --rm --init \
             --mount "type=bind,source=$PWD,target=/tests,readonly" \
             agent-container:test bash /tests/tests/toolchain.sh

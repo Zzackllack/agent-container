@@ -57,6 +57,27 @@ These changes do not yet have new GHCR publication or deployed dashboard
 evidence. Login status does not prove an authenticated model request, and no
 GPG private key or signing operation was provisioned or tested.
 
+## Cloudflare tunnel support (2026-10-20)
+
+The workspace image now ships cloudflared 2026.10.1 from Cloudflare's signed
+Debian repository: the repository key is pinned by checksum, the package
+version is pinned exactly, and the `tunnel` wrapper publishes a container-local
+service through a quick tunnel.
+
+A native amd64 build passed `docker build --check`, the workspace
+tool/lifecycle command, and `tests/toolchain.sh`, including the new cloudflared
+version check. In the built image, `tunnel 8080 --detach` printed a
+trycloudflare.com URL and a request to that URL returned the local Python
+server's index page (HTTP 200). The live sandbox container behaved the same:
+cloudflared reported a healthy environment with QUIC and HTTP/2 connectivity to
+Cloudflare, and its public URL served the local server.
+
+Not covered: an arm64 build (this sandbox has no arm64 emulation; the
+installer resolves the architecture from the signed repository, which publishes
+arm64 packages), named tunnels against a real Cloudflare account, and quick
+tunnel hostname propagation — one sandbox resolver still answered NXDOMAIN for
+a freshly issued hostname while a public DNS-over-HTTPS lookup resolved it.
+
 ## Published images (2026-10-15)
 
 The [first publishing run](https://github.com/Zzackllack/agent-container/actions/runs/38738978164)

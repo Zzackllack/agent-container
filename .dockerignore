@@ -7,6 +7,8 @@
 !scripts/install-t3.sh
 !scripts/install-docker.sh
 !scripts/install-gh.sh
+!scripts/install-cloudflared.sh
+!scripts/tunnel.sh
 !scripts/install-node.sh
 !scripts/install-uv.sh
 !scripts/install-go.sh
@@ -25,6 +27,7 @@
 !versions/opencode.env
 !versions/docker.env
 !versions/gh.env
+!versions/cloudflared.env
 !versions/node.env
 !versions/uv.env
 !versions/go.env

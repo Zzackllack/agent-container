@@ -17,7 +17,8 @@ runtime responsibilities. Read the relevant guide before changing one:
   temporary-directory cleanup. Keep installers separate from runtime helpers.
 - Verify pinned checksums before extracting archives; Docker packages use signed
   APT metadata and a checksum-pinned key. Support `amd64` and `arm64`, and reject
-  unsupported architectures explicitly.
+  unsupported architectures explicitly. cloudflared follows the same signed APT
+  route with Cloudflare's repository key.
 - Preserve complete upstream packages when bundled helpers are required. Codex
   and T3 cannot be reduced to just their main executable.
 - Docker copies each installer and its version file into the same temporary

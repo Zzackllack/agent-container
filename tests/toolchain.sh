@@ -19,6 +19,7 @@ load_versions go.env
 load_versions rust.env
 load_versions java.env
 load_versions maven.env
+load_versions cloudflared.env
 
 check() {
     local description=$1 expected=$2 actual
@@ -55,6 +56,8 @@ check pnpm "$PNPM_VERSION" pnpm --version
 check yarn "$YARN_VERSION" yarn --version
 # uv prints the resolved target too, e.g. "uv 0.13.1 (x86_64-unknown-linux-gnu)".
 check uv "uv $UV_VERSION" bash -c 'uv --version | cut -d" " -f1,2'
+# cloudflared appends the build date, so compare the prefix.
+check cloudflared "cloudflared version $CLOUDFLARED_VERSION" bash -c 'cloudflared --version | cut -d" " -f1,2,3'
 optional go "go" "go version go$GO_VERSION linux/$(dpkg --print-architecture)" go version
 # rustc and cargo append the commit hash and build date, so compare the prefix.
 optional rustc "rustc" "rustc $RUST_TOOLCHAIN_VERSION" bash -c 'rustc --version | cut -d" " -f1,2'
@@ -97,7 +100,7 @@ if command -v mvn >/dev/null; then
     printf 'ok   %-28s %s\n' "maven cache" "~/.m2 inside the home volume"
 fi
 
-for tool in fd bat delta direnv fzf git gh jq just less nano pnpm protoc psql python3 rg rsync shellcheck sqlite3 sudo tmux tree uv uvx wget xz zoxide zstd node npm npx; do
+for tool in fd bat delta direnv fzf git gh jq just less nano pnpm protoc psql python3 rg rsync shellcheck sqlite3 sudo tmux tree uv uvx wget xz zoxide zstd node npm npx cloudflared tunnel; do
     present "$tool"
 done
 for tool in cargo go rustc rustfmt cargo-clippy java javac mvn; do

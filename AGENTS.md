@@ -17,6 +17,8 @@ configuration dashboard. Keep it portable across unrelated Docker hosts.
   Never replace Sysbox with privileged mode or a host Docker socket mount.
 - Keep Codex/OpenCode image-managed. T3's selected runtime lives in the home
   volume; rebuilding must not overwrite it. See [updates](docs/updates.md).
+- Keep cloudflared image-managed and never let an agent run replace it. Tunnels
+  need outbound port 7844 and expose no inbound port.
 - Verify downloaded packages and both architecture hashes; keep new build inputs
   in the `.dockerignore` allowlist. See [installer rules](docs/development.md#image-and-installer-changes).
 - Manage instructions as local files in persistent volumes through the dashboard.

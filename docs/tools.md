@@ -18,6 +18,7 @@ versions against those pins.
 | Java (OpenJDK) | **25** LTS (`25.0.4.1`) | Debian 13 (`openjdk-25-jdk`) |
 | Maven | **3.10.0** | Apache release tarball, SHA-512 pinned |
 | GitHub CLI | **2.102.0** | checksum-pinned release package |
+| cloudflared (Cloudflare Tunnel) | **2026.10.1** | Cloudflare's signed Debian repository, version-pinned |
 | Python | **3.13.5** | Debian 13 (`python3`, `python3-venv`, `python3-dev`) |
 | Docker Engine/CLI, containerd, Buildx, Compose | **29.9.1**, **2.4.2**, **0.38.0**, **5.6.0** | Docker's signed Debian repository |
 
@@ -46,8 +47,8 @@ its own distribution on first use.
 
 The default workspace image is about 4.0 GB. The heavy additions are the Rust
 toolchain (~620 MB), Java with Maven (~420 MB), Go (~280 MB) and Node.js
-(~270 MB); the rest is Debian, Docker, and the agent CLIs. The three language
-toolchains are optional at build time:
+(~270 MB); the rest is Debian, Docker, and the agent CLIs. cloudflared adds
+about 40 MB. The three language toolchains are optional at build time:
 
 ```sh
 # Go, Rust, and Java with Maven left out: about 2.7 GB
@@ -91,6 +92,33 @@ Gradle (the `./gradlew` wrapper downloads its own distribution), Android SDKs,
 cloud provider CLIs (aws, gcloud, az), Playwright/Puppeteer browser downloads,
 prebuilt CPython toolchains (uv handles those), and IDEs. The dashboard's Node
 runtime belongs to its separate image.
+
+## Cloudflare tunnels
+
+`cloudflared` is installed in the image, so an agent can publish a dev server
+without extra setup. The `tunnel` wrapper starts a **quick tunnel**: Cloudflare
+assigns a random `trycloudflare.com` hostname, and no Cloudflare account is
+needed.
+
+```sh
+tunnel 3000                  # publish http://127.0.0.1:3000
+tunnel http://127.0.0.1:5173 # any target URL
+tunnel 3000 --detach         # background: prints URL, PID, and log file
+```
+
+The wrapper runs `cloudflared tunnel --no-autoupdate`; the image-managed
+binary is never replaced by an agent run. Quick tunnels are meant for
+development and previews, not production traffic, and the hostname changes on
+every start. For a stable hostname, create a named tunnel in the Cloudflare
+dashboard and run the container with the tunnel token:
+
+```sh
+CLOUDFLARED_TUNNEL_TOKEN=<token> tunnel --detach
+```
+
+Tunnels need outbound connectivity to Cloudflare on port 7844 (QUIC, with an
+HTTP/2 fallback over TCP). Set `TUNNEL_PROTOCOL=http2` when UDP is blocked.
+No inbound port or extra Compose publishing is required.
 
 ## OpenCode and T3 Code
 

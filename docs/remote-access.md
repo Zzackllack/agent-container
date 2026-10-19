@@ -64,3 +64,19 @@ See [T3 remote access](https://github.com/pingdotgg/t3code/blob/main/docs/user/r
 for the supported connection and authorization flows.
 
 For dashboard access, use the separate [dashboard guide](dashboard.md#storage-and-access).
+
+## Publishing a local dev server
+
+The workspace image includes `cloudflared`, so a service running inside the
+container can be reached over a public HTTPS URL without changing the Compose
+port bindings or the host firewall:
+
+```sh
+docker compose exec --user agent workspace tunnel 3000
+```
+
+Cloudflare assigns a random `trycloudflare.com` hostname and prints the public
+URL. This is a quick tunnel: it is meant for development and previews, the
+hostname changes on every start, and Cloudflare does not support it for
+production traffic. Use a named tunnel with `CLOUDFLARED_TUNNEL_TOKEN` for a
+stable hostname. See [Cloudflare tunnels](tools.md#cloudflare-tunnels).
