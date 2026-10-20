@@ -91,6 +91,8 @@ Run these checks from the repository root after relevant changes:
 git diff --check
 docker compose config --quiet
 docker compose -f compose.yaml -f compose.sysbox.yaml config --quiet
+docker compose -f compose.yaml -f compose.browser.yaml config --quiet
+docker compose -f compose.yaml -f compose.sysbox.yaml -f compose.browser.yaml config --quiet
 for script in scripts/*.sh tests/*.sh; do bash -n "$script"; done
 sh tests/t3-pair.sh
 ```

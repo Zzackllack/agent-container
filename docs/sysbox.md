@@ -189,6 +189,13 @@ Sysbox's [multi-arch requirements](https://github.com/nestybox/sysbox/blob/maste
 include Linux kernel 6.7 or newer; the image's amd64/arm64 support alone does not
 establish this capability.
 
+## T3 browser sandbox
+
+T3's browser needs a separate host policy on Ubuntu hosts that restrict user
+namespaces. See [T3 browser setup](browser.md) for the policy and read-only
+Compose mount; running `t3 browser setup` inside the workspace cannot load it
+on the host.
+
 ## Codex command sandbox
 
 Codex's command sandbox is separate from Sysbox. For the pinned Linux CLI, use

@@ -1,0 +1,12 @@
+# Optional: first load this profile on the Docker host (docs/browser.md).
+services:
+  workspace:
+    volumes:
+      # T3's preflight checks this file inside the container. The host kernel
+      # enforces the loaded policy; mounting the file alone does not load it.
+      - type: bind
+        source: /etc/apparmor.d/t3-chrome-headless-shell
+        target: /etc/apparmor.d/t3-chrome-headless-shell
+        read_only: true
+        bind:
+          create_host_path: false
