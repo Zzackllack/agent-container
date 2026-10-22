@@ -23,7 +23,7 @@ download_dir=$(mktemp -d)
 trap 'rm -rf "$download_dir"' EXIT HUP INT TERM
 
 curl --fail --show-error --location --retry 3 \
-    "https://static.rust-lang.org/rustup/dist/${target}/rustup-init" \
+    "https://static.rust-lang.org/rustup/archive/${RUSTUP_VERSION}/${target}/rustup-init" \
     --output "$download_dir/rustup-init"
 printf '%s  %s\n' "$checksum" "$download_dir/rustup-init" | sha256sum --check --strict
 chmod 0755 "$download_dir/rustup-init"
