@@ -11,7 +11,7 @@ trap 'rm -rf "$download_dir"' EXIT HUP INT TERM
 archive="apache-maven-${MAVEN_VERSION}-bin.tar.gz"
 
 curl --fail --show-error --location --retry 3 \
-    "https://dlcdn.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries/${archive}" \
+    "https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/${archive}" \
     --output "$download_dir/$archive"
 printf '%s  %s\n' "$MAVEN_SHA512" "$download_dir/$archive" | sha512sum --check --strict
 
