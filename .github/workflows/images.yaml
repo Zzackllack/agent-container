@@ -6,6 +6,7 @@ on:
     paths:
       - .github/workflows/images.yaml
       - .dockerignore
+      - compose*.yaml
       - Dockerfile
       - dashboard/**
       - scripts/**
@@ -17,6 +18,7 @@ on:
     paths:
       - .github/workflows/images.yaml
       - .dockerignore
+      - compose*.yaml
       - Dockerfile
       - dashboard/**
       - scripts/**
@@ -60,6 +62,16 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Validate Compose overlays
+        # Documented combinations in docs/development.md; catch a broken
+        # override before spending minutes on an image build.
+        run: |
+          docker compose config --quiet
+          docker compose -f compose.yaml -f compose.sysbox.yaml config --quiet
+          docker compose -f compose.yaml -f compose.images.yaml config --quiet
+          docker compose -f compose.yaml -f compose.browser.yaml config --quiet
+          docker compose -f compose.yaml -f compose.sysbox.yaml -f compose.browser.yaml config --quiet
+          docker compose -f compose.yaml -f compose.sysbox.yaml -f compose.browser-unsandboxed.yaml config --quiet
       - name: Build native image for testing
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
