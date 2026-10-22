@@ -12,7 +12,7 @@
 ## Optional integrations
 
 - [Sysbox](sysbox.md): nested Docker on a compatible Linux host.
-- [T3 browser on Ubuntu hosts](browser.md): AppArmor setup for browser previews.
+- [T3 browser on Linux hosts](browser.md): sandbox policy, Sysbox fallback, troubleshooting.
 - [Configuration dashboard](dashboard.md): edit rules and provider config in the browser.
 - [GitHub CLI](github.md): login, Git credentials, commit signing.
 - [Context7 MCP](context7.md): configure documentation access for both agents.

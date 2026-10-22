@@ -196,6 +196,12 @@ namespaces. See [T3 browser setup](browser.md) for the policy and read-only
 Compose mount; running `t3 browser setup` inside the workspace cannot load it
 on the host.
 
+That policy cannot help under Sysbox: the container blocks the nested user
+namespace ID mapping Chrome's sandbox needs, and the AppArmor rule only grants
+namespace creation. Use `compose.browser-unsandboxed.yaml` if the preview
+browser matters here, and weigh the trade-off documented in
+[T3 browser setup](browser.md#sysbox-workspaces).
+
 ## Codex command sandbox
 
 Codex's command sandbox is separate from Sysbox. For the pinned Linux CLI, use

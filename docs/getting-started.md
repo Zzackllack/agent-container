@@ -84,7 +84,7 @@ covers instruction/configuration editing, backups, and access settings.
 
 ## Optional setup
 
-- [T3 browser on Ubuntu hosts](browser.md): host AppArmor policy and container mount.
+- [T3 browser on Linux hosts](browser.md): host AppArmor policy, container mount, Sysbox fallback.
 - [Remote web/native access](remote-access.md): LAN/VPN bindings, HTTPS, T3 Connect.
 - [GitHub CLI](github.md): login and Git authentication.
 - [Context7 MCP](context7.md): configure Codex and OpenCode with your key.

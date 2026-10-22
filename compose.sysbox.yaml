@@ -5,6 +5,9 @@ services:
     user: "0:0"
     environment:
       WORKSPACE_DOCKER_ENABLED: "true"
+      # Chrome's sandbox cannot start under Sysbox. Add
+      # compose.browser-unsandboxed.yaml if you need T3's preview browser;
+      # read the trade-off in docs/browser.md first.
     volumes:
       - agent-docker:/var/lib/docker
     stop_grace_period: 45s

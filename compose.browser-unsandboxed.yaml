@@ -1,0 +1,10 @@
+# Optional: run T3's headless browser without Chrome's sandbox.
+#
+# Only for workspaces where Chrome's sandbox cannot start: Sysbox on any host,
+# or another restricted container. Prefer compose.browser.yaml where it works.
+# Read the trade-off in docs/browser.md before adding this override.
+services:
+  workspace:
+    environment:
+      # T3 passes --no-sandbox to its headless Chrome when this is "0".
+      T3CODE_SERVER_BROWSER_SANDBOX: "0"
