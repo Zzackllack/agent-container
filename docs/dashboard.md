@@ -128,7 +128,7 @@ this separate dashboard service.
 
 ## Development and checks
 
-Use Node.js 24 and pnpm 12.11.2. The lockfile pins frontend/backend dependencies.
+Use Node.js 24 and pnpm 12.16.1. The lockfile pins frontend/backend dependencies.
 For development, use disposable paths rather than your actual agent home:
 
 ```sh

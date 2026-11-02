@@ -1,6 +1,6 @@
 FROM node:24-bookworm-slim AS build
 WORKDIR /app
-RUN npm install --global pnpm@12.11.2
+RUN npm install --global pnpm@12.16.1
 COPY dashboard/package.json dashboard/pnpm-lock.yaml dashboard/pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY dashboard/ ./
