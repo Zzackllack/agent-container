@@ -1,9 +1,9 @@
 # GitHub CLI
 
 GitHub CLI (`gh`) is included in the image for repositories, issues, pull
-requests, Actions, and API calls. Version **2.102.0** is pinned in
+requests, Actions, and API calls. Version **2.103.3** is pinned in
 `versions/gh.env`; the amd64/arm64 upstream archives are checksum-verified during
-the image build. See the [release](https://github.com/cli/cli/releases/tag/v2.102.0)
+the image build. See the [release](https://github.com/cli/cli/releases/tag/v2.103.3)
 and [upstream installation options](https://github.com/cli/cli/blob/trunk/docs/install_linux.md).
 
 ## Install and log in

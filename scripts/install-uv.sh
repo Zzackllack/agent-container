@@ -32,5 +32,5 @@ tar -xzf "$download_dir/$archive" -C "$download_dir"
 install -m 0755 "$download_dir/uv-$target/uv" /usr/local/bin/uv
 install -m 0755 "$download_dir/uv-$target/uvx" /usr/local/bin/uvx
 
-# uv prints the resolved target too, e.g. "uv 0.13.1 (x86_64-unknown-linux-gnu)".
+# uv prints the resolved target too, e.g. "uv 0.13.6 (x86_64-unknown-linux-gnu)".
 uv --version | grep -F "uv $UV_VERSION "
