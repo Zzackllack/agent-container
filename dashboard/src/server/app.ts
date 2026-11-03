@@ -2,10 +2,9 @@ import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { secureHeaders } from "hono/secure-headers";
 import { z } from "zod";
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
 import { authentication } from "./auth.js";
 import { FileError, Files } from "./files.js";
+import { readToolchain } from "./toolchain.js";
 import type { Settings } from "./config.js";
 import type { Overview } from "../shared/types.js";
 
@@ -98,7 +97,7 @@ export async function createApp(config: Settings) {
     );
   });
   app.get("/api/overview", async (c) => {
-    const [t3, baseline] = await Promise.all([
+    const [t3, toolchain] = await Promise.all([
       fetch(`${config.t3Internal}/.well-known/t3/environment`, {
         signal: AbortSignal.timeout(2000),
       })
@@ -113,22 +112,11 @@ export async function createApp(config: Settings) {
             : { reachable: false };
         })
         .catch(() => ({ reachable: false })),
-      Promise.all(
-        ["codex", "opencode", "gh"].map(async (tool) => {
-          const source = await readFile(
-            join(config.versions, `${tool}.env`),
-            "utf8",
-          ).catch(() => "");
-          return [
-            tool,
-            source.match(/^[A-Z_]+_VERSION=(.+)$/m)?.[1] ?? "Not recorded",
-          ] as const;
-        }),
-      ).then((entries) => Object.fromEntries(entries)),
+      readToolchain(config.versions),
     ]);
     return c.json({
       t3: { ...t3, url: config.t3Public },
-      baseline,
+      ...toolchain,
       home: config.home,
       workspace: config.workspace,
     } satisfies Overview);

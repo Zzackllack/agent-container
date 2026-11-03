@@ -1,5 +1,5 @@
 import { classNames } from "../classNames";
-import { agentBrand } from "./agents";
+import { brandFor } from "./brands";
 
 export type MarkSize = "sm" | "md" | "lg" | "xl";
 
@@ -8,7 +8,7 @@ export type MarkSize = "sm" | "md" | "lg" | "xl";
  * harness) render nothing instead of a broken image, so callers can keep their
  * text label as the only source of truth.
  */
-export function AgentMark({
+export function BrandMark({
   name,
   size = "md",
   className,
@@ -17,7 +17,7 @@ export function AgentMark({
   size?: MarkSize;
   className?: string;
 }) {
-  const brand = agentBrand(name);
+  const brand = brandFor(name);
   if (!brand) return null;
   const { Mark } = brand;
   return (
@@ -36,19 +36,19 @@ export function AgentMark({
 }
 
 /** Every agent that reads a file, in declaration order. */
-export function AgentMarks({
+export function BrandMarks({
   agents,
   size = "sm",
 }: {
   agents: string[];
   size?: MarkSize;
 }) {
-  const known = agents.filter((agent) => agentBrand(agent));
+  const known = agents.filter((agent) => brandFor(agent));
   if (!known.length) return null;
   return (
     <span className="mark-stack">
       {known.map((agent) => (
-        <AgentMark key={agent} name={agent} size={size} />
+        <BrandMark key={agent} name={agent} size={size} />
       ))}
     </span>
   );

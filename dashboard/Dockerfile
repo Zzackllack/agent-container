@@ -10,7 +10,8 @@ FROM node:24-bookworm-slim
 ENV NODE_ENV=production PORT=3780
 WORKDIR /app
 COPY --from=build /app/dist ./dist
-COPY versions/codex.env versions/opencode.env versions/gh.env ./versions/
+# The overview reports every pinned tool, so ship the whole versions table.
+COPY versions/ ./versions/
 RUN mkdir -p /home/agent /var/lib/agent-dashboard \
     && chown node:node /home/agent /var/lib/agent-dashboard
 USER node

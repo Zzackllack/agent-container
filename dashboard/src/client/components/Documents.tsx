@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import type { Document, HistoryEntry, Inventory } from "../../shared/types";
 import { api } from "../api";
-import { AgentMark, AgentMarks } from "../brand/AgentMark";
+import { BrandMark, BrandMarks } from "../brand/BrandMark";
 import { InventoryWarnings } from "./InventoryWarnings";
 import { Modal } from "./Dialog";
 
@@ -187,7 +187,7 @@ export function Documents({
                     onClick={() => select(file.id)}
                   >
                     {/* Agent marks identify the file owner; lock state stays on the right. */}
-                    <AgentMarks agents={file.agents} />
+                    <BrandMarks agents={file.agents} />
                     <span className="file-item-label">
                       <strong>{file.label}</strong>
                       <small>
@@ -213,8 +213,8 @@ export function Documents({
             <>
               <div className="editor-header">
                 <div>
-                  <AgentMark name={document.agents[0]} size="sm" />
-                  <span>{document.path}</span>
+                  <BrandMark name={document.agents[0]} size="sm" />
+                  <span className="editor-path">{document.path}</span>
                   {dirty ? (
                     <span className="dirty-dot" title="Unsaved changes" />
                   ) : null}
@@ -341,8 +341,8 @@ export function Documents({
               <dt>Read by</dt>
               <dd className="agent-tags">
                 {document.agents.map((agent) => (
-                  <span key={agent}>
-                    <AgentMark name={agent} size="sm" />
+                  <span key={agent} className="agent-tag">
+                    <BrandMark name={agent} size="sm" />
                     {agent}
                   </span>
                 ))}

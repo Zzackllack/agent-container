@@ -1,7 +1,38 @@
-import { ExternalLink, FolderGit2, RefreshCw, Settings2 } from "lucide-react";
-import type { Inventory, Overview as OverviewData } from "../../shared/types";
-import { agentBrand } from "../brand/agents";
-import { AgentMark, AgentMarks } from "../brand/AgentMark";
+import {
+  ExternalLink,
+  FolderGit2,
+  RefreshCw,
+  Settings2,
+  Wrench,
+} from "lucide-react";
+import type {
+  Inventory,
+  Overview as OverviewData,
+  ToolCategory,
+} from "../../shared/types";
+import { BrandMark, BrandMarks } from "../brand/BrandMark";
+
+const GROUPS: Array<{
+  category: ToolCategory;
+  title: string;
+  blurb: string;
+}> = [
+  {
+    category: "agent",
+    title: "Coding agents",
+    blurb: "CLIs T3 can run inside this image.",
+  },
+  {
+    category: "runtime",
+    title: "Language runtimes",
+    blurb: "Toolchains for the languages you build in.",
+  },
+  {
+    category: "platform",
+    title: "Platform tools",
+    blurb: "Container, tunnel, and repository plumbing.",
+  },
+];
 
 export function Overview({
   overview,
@@ -19,7 +50,7 @@ export function Overview({
   const global = inventory.documents.filter(
     (file) => file.scope === "global" && file.kind === "instructions",
   );
-  const baseline = Object.entries(overview?.baseline ?? {});
+  const tools = overview?.tools ?? [];
   return (
     <div className="overview-page">
       <header className="page-header">
@@ -34,7 +65,7 @@ export function Overview({
       </header>
 
       <section className="runtime-panel">
-        <AgentMark name="T3 Code" size="xl" />
+        <BrandMark name="T3 Code" size="xl" />
         <div className="runtime-copy">
           <span className="eyebrow">Workspace runtime</span>
           <h2>{overview?.t3.version ?? "Waiting for workspace"}</h2>
@@ -60,39 +91,105 @@ export function Overview({
         ) : null}
       </section>
 
+      <div className="section-heading">
+        <div>
+          <h2>Image toolchain</h2>
+          <p>
+            {tools.length
+              ? `${tools.length} pinned tools and the base packages shared by every workspace session.`
+              : "Pinned toolchains and the base packages shared by every workspace session."}{" "}
+            Versions change with a rebuild.
+          </p>
+        </div>
+      </div>
+
+      <div className="tool-grid">
+        {GROUPS.map(({ category, title, blurb }) => {
+          const group = tools.filter((tool) => tool.category === category);
+          return (
+            <section className="card tool-card" key={category}>
+              <div className="card-heading">
+                <div>
+                  <h2>{title}</h2>
+                  <p className="card-subtitle">{blurb}</p>
+                </div>
+                <span className="count-badge">{group.length}</span>
+              </div>
+              {group.length ? (
+                <ul className="tool-list">
+                  {group.map((tool) => (
+                    <li key={tool.id}>
+                      <BrandMark name={tool.id} size="lg" />
+                      <span className="tool-copy">
+                        <span className="tool-name">{tool.name}</span>
+                        <span className="tool-detail">{tool.detail}</span>
+                        {tool.note ? (
+                          <span className="tool-note">{tool.note}</span>
+                        ) : null}
+                        {tool.extras?.length ? (
+                          <span className="tool-extras">
+                            {tool.extras.map((extra) => (
+                              <span key={extra.name}>
+                                {extra.name}
+                                <code>{extra.version}</code>
+                              </span>
+                            ))}
+                          </span>
+                        ) : null}
+                      </span>
+                      <code className="tool-version">{tool.version}</code>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="section-note">No tools reported yet.</p>
+              )}
+            </section>
+          );
+        })}
+      </div>
+
+      {overview?.utilities.length ? (
+        <section className="card utilities-card">
+          <div className="card-heading">
+            <div>
+              <h2>Base utilities</h2>
+              <p className="card-subtitle">
+                Debian 13 packages available in every session.
+              </p>
+            </div>
+            <span className="heading-icon">
+              <Wrench size={15} />
+            </span>
+          </div>
+          <div className="utility-groups">
+            {overview.utilities.map((group) => (
+              <div key={group.group}>
+                <h3>{group.group}</h3>
+                <ul className="chips">
+                  {group.items.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <p className="section-note">
+            Headless Chromium libraries are present for Playwright and
+            Puppeteer; the browsers themselves stay a per-project install.
+          </p>
+        </section>
+      ) : null}
+
       <div className="overview-columns">
         <section className="card">
           <div className="card-heading">
-            <h2>CLI image baseline</h2>
-            <button className="text-button" onClick={openConfiguration}>
-              Configure
-            </button>
-          </div>
-          {baseline.length ? (
-            <ul className="agent-list">
-              {baseline.map(([tool, version]) => (
-                <li key={tool}>
-                  <AgentMark name={tool} size="md" />
-                  <span>
-                    <strong>{agentBrand(tool)?.label ?? tool}</strong>
-                    <small>Installed in this image</small>
-                  </span>
-                  <code>{version}</code>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="section-note">No CLI baselines reported yet.</p>
-          )}
-          <p className="section-note">
-            Versions shipped with this dashboard build. T3’s live version is
-            reported separately above.
-          </p>
-        </section>
-
-        <section className="card">
-          <div className="card-heading">
-            <h2>Global instructions</h2>
+            <div>
+              <h2>Global instructions</h2>
+              <p className="card-subtitle">
+                What each agent reads before a fresh session.
+              </p>
+            </div>
             <button className="text-button" onClick={openInstructions}>
               Manage files
             </button>
@@ -100,8 +197,8 @@ export function Overview({
           <div className="definition-list">
             {global.map((file) => (
               <div key={file.id}>
-                <span>
-                  <AgentMarks agents={file.agents} />
+                <span className="definition-label">
+                  <BrandMarks agents={file.agents} />
                   {file.label}
                 </span>
                 <span className="badge">
@@ -119,33 +216,36 @@ export function Overview({
             stay in each repository.
           </p>
         </section>
-      </div>
 
-      <section className="card paths-card">
-        <div className="card-heading">
-          <h2>Persistent locations</h2>
-          <button className="text-button" onClick={openConfiguration}>
-            <Settings2 size={13} />
-            Configuration
-          </button>
-        </div>
-        <div className="path-list">
-          <div>
-            <FolderGit2 size={17} />
-            <span>Agent home</span>
-            <code>{overview?.home ?? "—"}</code>
+        <section className="card paths-card">
+          <div className="card-heading">
+            <div>
+              <h2>Persistent locations</h2>
+              <p className="card-subtitle">Volumes that survive a rebuild.</p>
+            </div>
+            <button className="text-button" onClick={openConfiguration}>
+              <Settings2 size={13} />
+              Configuration
+            </button>
           </div>
-          <div>
-            <FolderGit2 size={17} />
-            <span>Repositories</span>
-            <code>{overview?.workspace ?? "—"}</code>
+          <div className="path-list">
+            <div>
+              <FolderGit2 size={17} />
+              <span>Agent home</span>
+              <code>{overview?.home ?? "—"}</code>
+            </div>
+            <div>
+              <FolderGit2 size={17} />
+              <span>Repositories</span>
+              <code>{overview?.workspace ?? "—"}</code>
+            </div>
           </div>
-        </div>
-        <p className="section-note">
-          Edits go to these files directly. No separate copy of your agent
-          configuration is maintained.
-        </p>
-      </section>
+          <p className="section-note">
+            Edits go to these files directly. No separate copy of your agent
+            configuration is maintained.
+          </p>
+        </section>
+      </div>
     </div>
   );
 }

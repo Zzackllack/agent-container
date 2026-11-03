@@ -19,14 +19,46 @@
   height: 100%;
   display: block;
 }
-/* OpenAI/GitHub artwork is a bare glyph, so the chip provides the tile. */
+/* Glyph artwork is a bare path, so the chip provides the tile. The defaults
+   are neutral; each vendor gets a readable tint below. */
 .mark--glyph {
   background: var(--mark-bg);
   color: var(--mark-ink);
 }
 .mark--glyph .mark-art {
-  width: 72%;
-  height: 72%;
+  width: 66%;
+  height: 66%;
+}
+/* Codex and GitHub live on the same near-black tile as the T3/OpenCode marks,
+   so the row reads as one set instead of two different logo styles. */
+.mark--codex,
+.mark--gh {
+  --mark-bg: #0b0b0b;
+  --mark-ink: #f7f7f7;
+}
+.mark--cloudflared {
+  --mark-ink: light-dark(#c4500a, #f38020);
+}
+.mark--node {
+  --mark-ink: light-dark(#3f7f38, #79c96d);
+}
+.mark--go {
+  --mark-ink: light-dark(#007d99, #34d3f5);
+}
+.mark--rust {
+  --mark-ink: light-dark(#1f1f1f, #e3e3e3);
+}
+.mark--java {
+  --mark-ink: light-dark(#b85c00, #f5a623);
+}
+.mark--maven {
+  --mark-ink: light-dark(#b01730, #ef5c77);
+}
+.mark--docker {
+  --mark-ink: light-dark(#1878c4, #4fa8f5);
+}
+.mark--uv {
+  --mark-ink: light-dark(#b23cc0, #eda6f3);
 }
 .mark--sm {
   --mark-size: 17px;
@@ -119,7 +151,9 @@
   padding-top: 20px;
   border-top: 1px solid var(--border);
 }
-.login-marks > span {
+/* The label needs its own hook: a bare `span` rule also hit the logo chips and
+   knocked them out of their grid (the Codex glyph sat off-centre and grey). */
+.login-marks > .login-marks-label {
   display: flex;
   align-items: center;
   gap: 7px;

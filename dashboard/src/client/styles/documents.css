@@ -190,7 +190,7 @@ p.scan-warning {
   min-width: 0;
   color: var(--text-faint);
 }
-.editor-header > div > span:first-of-type {
+.editor-path {
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--text-muted);
@@ -302,7 +302,9 @@ p.scan-warning {
   gap: 6px;
   flex-wrap: wrap;
 }
-.agent-tags span {
+/* Match the pill only, never the mark span nested inside it: a bare `.span`
+   selector turned the logo into a second pill and hid the glyph. */
+.agent-tags .agent-tag {
   display: inline-flex;
   align-items: center;
   gap: 6px;

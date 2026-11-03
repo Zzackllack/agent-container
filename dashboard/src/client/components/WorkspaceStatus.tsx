@@ -1,7 +1,6 @@
 import { ExternalLink } from "lucide-react";
 import type { Overview } from "../../shared/types";
-import { agentBrand } from "../brand/agents";
-import { AgentMark } from "../brand/AgentMark";
+import { BrandMark } from "../brand/BrandMark";
 
 /**
  * The sidebar's "what is running here" block: the T3 Code server plus the CLI
@@ -16,7 +15,7 @@ export function WorkspaceCard({ overview }: { overview: Overview | null }) {
       : "Workspace unavailable";
   const body = (
     <>
-      <AgentMark name="T3 Code" size="lg" />
+      <BrandMark name="T3 Code" size="lg" />
       <span className="workspace-card-label">
         <strong>T3 Code</strong>
         <small>
@@ -43,20 +42,19 @@ export function WorkspaceCard({ overview }: { overview: Overview | null }) {
   );
 }
 
-/** Versions of the CLI baselines, minus tools with no files here (`gh`). */
+/** Versions of the coding agents, minus tools that are not part of the CLI set. */
 export function ToolchainList({ overview }: { overview: Overview | null }) {
-  const tools = Object.entries(overview?.baseline ?? {}).filter(([tool]) => {
-    const id = agentBrand(tool)?.id;
-    return id === "codex" || id === "opencode";
-  });
+  const tools = (overview?.tools ?? []).filter(
+    (tool) => tool.category === "agent",
+  );
   if (!tools.length) return null;
   return (
     <ul className="toolchain" aria-label="Agent CLIs in this image">
-      {tools.map(([tool, version]) => (
-        <li key={tool}>
-          <AgentMark name={tool} size="sm" />
-          {agentBrand(tool)!.label}
-          <code>{version}</code>
+      {tools.map((tool) => (
+        <li key={tool.id}>
+          <BrandMark name={tool.id} size="sm" />
+          {tool.name}
+          <code>{tool.version}</code>
         </li>
       ))}
     </ul>

@@ -37,9 +37,35 @@ export interface HistoryEntry {
   savedAt: string;
   bytes: number;
 }
+/** Where a pinned tool belongs on the overview board. */
+export type ToolCategory = "agent" | "runtime" | "platform";
+
+export interface ToolVersion {
+  name: string;
+  version: string;
+}
+
+export interface ImageTool {
+  /** Brand id used by the client (`node`, `cloudflared`, …). */
+  id: string;
+  name: string;
+  detail: string;
+  category: ToolCategory;
+  version: string;
+  /** Secondary versions shipped alongside the main tool (pnpm, Compose, …). */
+  extras?: ToolVersion[];
+  note?: string;
+}
+
+export interface UtilityGroup {
+  group: string;
+  items: string[];
+}
+
 export interface Overview {
   t3: { reachable: boolean; version?: string; url: string };
-  baseline: Record<string, string>;
+  tools: ImageTool[];
+  utilities: UtilityGroup[];
   home: string;
   workspace: string;
 }

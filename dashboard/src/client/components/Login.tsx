@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { ArrowRight, KeyRound } from "lucide-react";
 import { api } from "../api";
-import { AgentMark } from "../brand/AgentMark";
+import { BrandMark } from "../brand/BrandMark";
 import { ThemeSwitch } from "./ThemeSwitch";
 import { Logo } from "./Logo";
 
@@ -66,10 +66,10 @@ export function Login({ onLogin }: { onLogin: () => void }) {
           </code>
         </details>
         <div className="login-marks">
-          <span>Editing files for</span>
-          <AgentMark name="T3 Code" size="md" />
-          <AgentMark name="Codex" size="md" />
-          <AgentMark name="OpenCode" size="md" />
+          <span className="login-marks-label">Editing files for</span>
+          <BrandMark name="T3 Code" size="md" />
+          <BrandMark name="Codex" size="md" />
+          <BrandMark name="OpenCode" size="md" />
         </div>
         <div className="login-foot">
           <span>Runs on your box. Files stay in your volumes.</span>
