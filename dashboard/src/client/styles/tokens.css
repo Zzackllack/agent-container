@@ -57,6 +57,19 @@
   --editor-selection: light-dark(#335cff26, #7d97ff33);
   --editor-ink: light-dark(#26344a, #d6dfec);
 
+  /* Syntax colours. Both palettes stay close in hue so a theme switch keeps
+     the same reading rhythm instead of swapping to a different scheme. */
+  --code-keyword: light-dark(#8250df, #c9a4ff);
+  --code-string: light-dark(#0a7d4b, #7ee0a8);
+  --code-number: light-dark(#b35900, #ffbf78);
+  --code-property: light-dark(#1f5fbf, #8fb8ff);
+  --code-function: light-dark(#0b6f8a, #6fd3e6);
+  --code-comment: light-dark(#75859c, #708199);
+  --code-punctuation: light-dark(#52627a, #93a3b8);
+  --code-heading: light-dark(#1b2637, #eef3fa);
+  --code-link: light-dark(#1f5fbf, #8fb8ff);
+  --code-invalid: light-dark(#b42318, #ff9b91);
+
   --radius-sm: 6px;
   --radius: 10px;
   --radius-lg: 14px;
