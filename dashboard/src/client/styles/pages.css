@@ -95,12 +95,17 @@
   max-width: 78ch;
 }
 
-.tool-grid {
+.tool-board {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: start;
   gap: 20px;
   margin-top: 14px;
+}
+.tool-column {
+  display: grid;
+  gap: 20px;
+  align-content: start;
 }
 .tool-card .card-heading {
   align-items: center;
@@ -139,7 +144,7 @@
   display: flex;
   align-items: flex-start;
   gap: 11px;
-  padding: 13px 0;
+  padding: 11px 0;
   border-top: 1px solid var(--border);
   list-style: none;
 }
@@ -151,39 +156,43 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 .tool-name {
   font-size: 13px;
   font-weight: 500;
   color: var(--text);
 }
-.tool-detail {
+/* Detail and the secondary versions share one line, so a row stays two lines
+   tall even for Node.js or Docker. */
+.tool-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
   font-size: 11px;
   color: var(--text-faint);
-  line-height: 1.5;
+  line-height: 1.6;
+}
+.tool-extra {
+  white-space: nowrap;
+}
+.tool-extra::before {
+  content: "·";
+  margin: 0 7px;
+  color: var(--border-strong);
+}
+.tool-extra code {
+  margin-left: 3px;
+  color: var(--text-muted);
+  font-size: 10px;
 }
 .tool-note {
   font-size: 10px;
   color: var(--text-muted);
   line-height: 1.5;
 }
-.tool-extras {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px 10px;
-  margin-top: 4px;
-  font-size: 10px;
-  color: var(--text-faint);
-}
-.tool-extras code {
-  margin-left: 4px;
-  color: var(--text-muted);
-  font-size: 10px;
-}
 .tool-version {
   flex-shrink: 0;
-  margin-top: 1px;
   padding: 3px 8px;
   border-radius: 20px;
   background: var(--surface-sunken);
@@ -436,6 +445,12 @@
   }
 }
 
+@media (max-width: 960px) {
+  .tool-board {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 800px) {
   .runtime-panel {
     padding: 18px;
@@ -454,7 +469,8 @@
   .section-heading {
     margin-top: 22px;
   }
-  .tool-grid {
+  .tool-board,
+  .tool-column {
     gap: 14px;
   }
   .path-list > div {

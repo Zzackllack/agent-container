@@ -11,28 +11,22 @@ import type {
   ToolCategory,
 } from "../../shared/types";
 import { BrandMark, BrandMarks } from "../brand/BrandMark";
+import { ToolCard } from "./ToolCard";
 
-const GROUPS: Array<{
-  category: ToolCategory;
-  title: string;
-  blurb: string;
-}> = [
-  {
-    category: "agent",
+const GROUPS: Record<ToolCategory, { title: string; blurb: string }> = {
+  agent: {
     title: "Coding agents",
     blurb: "CLIs T3 can run inside this image.",
   },
-  {
-    category: "runtime",
+  runtime: {
     title: "Language runtimes",
     blurb: "Toolchains for the languages you build in.",
   },
-  {
-    category: "platform",
+  platform: {
     title: "Platform tools",
     blurb: "Container, tunnel, and repository plumbing.",
   },
-];
+};
 
 export function Overview({
   overview,
@@ -51,6 +45,8 @@ export function Overview({
     (file) => file.scope === "global" && file.kind === "instructions",
   );
   const tools = overview?.tools ?? [];
+  const byCategory = (category: ToolCategory) =>
+    tools.filter((tool) => tool.category === category);
   return (
     <div className="overview-page">
       <header className="page-header">
@@ -103,50 +99,14 @@ export function Overview({
         </div>
       </div>
 
-      <div className="tool-grid">
-        {GROUPS.map(({ category, title, blurb }) => {
-          const group = tools.filter((tool) => tool.category === category);
-          return (
-            <section className="card tool-card" key={category}>
-              <div className="card-heading">
-                <div>
-                  <h2>{title}</h2>
-                  <p className="card-subtitle">{blurb}</p>
-                </div>
-                <span className="count-badge">{group.length}</span>
-              </div>
-              {group.length ? (
-                <ul className="tool-list">
-                  {group.map((tool) => (
-                    <li key={tool.id}>
-                      <BrandMark name={tool.id} size="lg" />
-                      <span className="tool-copy">
-                        <span className="tool-name">{tool.name}</span>
-                        <span className="tool-detail">{tool.detail}</span>
-                        {tool.note ? (
-                          <span className="tool-note">{tool.note}</span>
-                        ) : null}
-                        {tool.extras?.length ? (
-                          <span className="tool-extras">
-                            {tool.extras.map((extra) => (
-                              <span key={extra.name}>
-                                {extra.name}
-                                <code>{extra.version}</code>
-                              </span>
-                            ))}
-                          </span>
-                        ) : null}
-                      </span>
-                      <code className="tool-version">{tool.version}</code>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="section-note">No tools reported yet.</p>
-              )}
-            </section>
-          );
-        })}
+      <div className="tool-board">
+        <div className="tool-column">
+          <ToolCard {...GROUPS.agent} tools={byCategory("agent")} />
+          <ToolCard {...GROUPS.platform} tools={byCategory("platform")} />
+        </div>
+        <div className="tool-column">
+          <ToolCard {...GROUPS.runtime} tools={byCategory("runtime")} />
+        </div>
       </div>
 
       {overview?.utilities.length ? (
