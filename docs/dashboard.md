@@ -81,12 +81,26 @@ The top bar holds a three-way colour switch: follow the system, light, or
 dark. The choice is stored in the browser's local storage and applies before the
 first paint; nothing about it is written to the volumes. Palettes are
 `light-dark()` token pairs in `dashboard/src/client/styles/tokens.css`, so
-components reference a semantic token instead of a hex value.
+components reference a semantic token instead of a hex value. That includes the
+editor's syntax palette (`--code-*`), so highlighted files stay readable in
+both themes.
 
-T3 Code, Codex, OpenCode, and GitHub CLI appear with their own marks in the
-sidebar, the overview, and next to the files each agent reads. The artwork is
-copied from the vendors' own repositories and stays decorative; sources and
-licences are listed in `dashboard/src/client/brand/README.md`.
+T3 Code, Codex, OpenCode, GitHub CLI, and the language/platform toolchains on
+the overview appear with their own marks. The artwork is copied from the
+vendors' own repositories or simple-icons and stays decorative; sources and
+licences are listed in `dashboard/src/client/brand/README.md`. Glyph marks sit
+on a neutral chip with a theme-aware brand tint; Codex and GitHub use the same
+near-black tile as T3 Code and OpenCode so the set reads as one row.
+
+## Overview
+
+The overview reports the live T3 Code version and reachability, then the
+toolchain pinned into the workspace image: coding agents, language runtimes,
+and platform tools (Docker, cloudflared, GitHub CLI), plus the Debian utilities
+every session shares. Versions come from the same `versions/*.env` files the
+installers consume; the dashboard does not inspect a running container. Rebuild
+the image to change a pin, and remember that optional build arguments
+(`WITH_JAVA`, `WITH_GO`, `WITH_RUST`) can leave a tool out of a custom image.
 
 ## Instruction files
 
@@ -139,13 +153,14 @@ pnpm build
 fixture=$(mktemp -d)
 mkdir -p "$fixture/home" "$fixture/workspace" "$fixture/state"
 AGENT_HOME="$fixture/home" AGENT_WORKSPACE="$fixture/workspace" \
-  DASHBOARD_STATE="$fixture/state" HOST=127.0.0.1 PORT=3780 \
-  node dist/server/index.js
+  DASHBOARD_STATE="$fixture/state" IMAGE_VERSIONS=../versions \
+  HOST=127.0.0.1 PORT=3780 node dist/server/index.js
 ```
 
 Read the generated password from `$fixture/state/password` in another terminal.
 For Vite hot reload, run `pnpm dev` alongside `pnpm dev:api` with the same fixture
-variables, `PORT=3781`, and `DASHBOARD_PUBLIC_URL=http://127.0.0.1:5173` on the API.
+variables (including `IMAGE_VERSIONS=../versions`), `PORT=3781`, and
+`DASHBOARD_PUBLIC_URL=http://127.0.0.1:5173` on the API.
 
 From the repository root:
 
