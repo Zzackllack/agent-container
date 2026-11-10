@@ -2,7 +2,7 @@
 
 T3 follows the nightly release train. The image contains a checksum-verified
 nightly seed resolved during the build, without an exact nightly version pin.
-OpenCode **2.2.5** is installed separately as a native, checksum-pinned v2 package.
+OpenCode **2.2.7** is installed separately as a native, checksum-pinned v2 package.
 Codex, OpenCode, GitHub CLI, and Docker remain image-managed.
 
 ## What persists

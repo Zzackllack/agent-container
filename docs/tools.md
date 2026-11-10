@@ -10,17 +10,17 @@ versions against those pins.
 
 | Tool | Version | Source |
 | --- | --- | --- |
-| Node.js | **24.22.2** (LTS) | `nodejs.org` tarball, SHA-256 pinned |
-| pnpm / yarn | **12.16.1** / **1.22.22** | npm registry (integrity-checked) |
-| uv (`uvx`) | **0.13.6** | Astral release archive, SHA-256 pinned |
-| Go | **1.27.3** | `go.dev` tarball, SHA-256 pinned |
+| Node.js | **26.13.0** (LTS) | `nodejs.org` tarball, SHA-256 pinned |
+| pnpm / yarn | **12.18.0** / **1.22.22** | npm registry (integrity-checked) |
+| uv (`uvx`) | **0.13.7** | Astral release archive, SHA-256 pinned |
+| Go | **1.27.4** | `go.dev` tarball, SHA-256 pinned |
 | Rust (rustc, cargo, rustfmt, clippy) | **1.99.1** | rustup with an image-managed toolchain |
-| Java (OpenJDK) | **25** LTS (`25.0.3+9`) | Debian 13 (`openjdk-25-jdk`) |
+| Java (OpenJDK) | **25** LTS (`25.0.5+8`) | Debian 13 (`openjdk-25-jdk`) |
 | Maven | **3.10.0** | Apache release tarball, SHA-512 pinned |
 | GitHub CLI | **2.103.3** | checksum-pinned release package |
 | cloudflared (Cloudflare Tunnel) | **2026.10.7** | GitHub release assets, SHA-256 pinned |
 | Python | **3.13.5** | Debian 13 (`python3`, `python3-venv`, `python3-dev`) |
-| Docker Engine/CLI, containerd, Buildx, Compose | **29.9.2**, **2.4.2**, **0.38.1**, **5.7.0** | Docker's signed Debian repository |
+| Docker Engine/CLI, containerd, Buildx, Compose | **29.9.3**, **2.4.2**, **0.38.1**, **5.7.0** | Docker's signed Debian repository |
 
 Node.js lives in `/opt/node`, Go in `/usr/local/go`, Maven in `/opt/maven`, and
 the Rust toolchain in `/opt/rustup`; those trees are root-owned and stay
@@ -36,7 +36,7 @@ uv manages its own Python builds in the home volume (`uv python install
 3.13`), so projects needing a specific interpreter do not need `sudo`.
 
 Java comes from the Debian repository rather than an upstream archive: trixie's
-`openjdk-25-jdk` tracks the current OpenJDK 25 LTS release (25.0.3+9),
+`openjdk-25-jdk` tracks the current OpenJDK 25 LTS release (25.0.5+8),
 and Debian security updates keep the patch level current. It is a full
 JDK, so `javac`, JShell, and Swing will not surprise you; `xvfb-run` with the
 bundled Xvfb runs AWT/Swing tests without an external display. Gradle is
@@ -122,7 +122,7 @@ No inbound port or extra Compose publishing is required.
 
 ## OpenCode and T3 Code
 
-- **OpenCode 2.2.5:** native glibc binary; the amd64 build uses the baseline
+- **OpenCode 2.2.7:** native glibc binary; the amd64 build uses the baseline
   variant for CPUs without AVX2. Automatic OpenCode updates are disabled.
 - **T3 Code nightly:** standalone Linux server runtime with its bundled web UI,
   terminal support, and resource monitor. No desktop GUI installation or separate
@@ -158,7 +158,7 @@ installations under `/opt` and `/usr/local/bin` remain root-owned; do not use
 
 ## Codex CLI
 
-Codex **0.166.0** is installed from the official native Linux package, including
+Codex **0.167.1** is installed from the official native Linux package, including
 its helper binaries. Node.js is not required for this installation. The version
 and SHA-256 hashes for both architectures are pinned in `versions/codex.env`;
 downloads are verified during the build. To upgrade, update all three values

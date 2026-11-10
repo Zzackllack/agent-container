@@ -54,7 +54,7 @@ optional() {
 check node "v$NODE_VERSION" node --version
 check pnpm "$PNPM_VERSION" pnpm --version
 check yarn "$YARN_VERSION" yarn --version
-# uv prints the resolved target too, e.g. "uv 0.13.6 (x86_64-unknown-linux-gnu)".
+# uv prints the resolved target too, e.g. "uv 0.13.7 (x86_64-unknown-linux-gnu)".
 check uv "uv $UV_VERSION" bash -c 'uv --version | cut -d" " -f1,2'
 # cloudflared appends the build date, so compare the prefix.
 check cloudflared "cloudflared version $CLOUDFLARED_VERSION" bash -c 'cloudflared --version | cut -d" " -f1,2,3'
