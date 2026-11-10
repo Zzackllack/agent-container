@@ -2,7 +2,7 @@
 
 The dashboard edits instruction and configuration files in the same home and
 workspace volumes the agents use. It is a separate Compose service: React, Vite,
-TypeScript, plain CSS, CodeMirror, and a small Hono API on Node.js 24. The
+TypeScript, plain CSS, CodeMirror, and a small Hono API on Node.js 26. The
 workspace image does not need Node.js for this service.
 
 ## Open it
@@ -142,7 +142,7 @@ this separate dashboard service.
 
 ## Development and checks
 
-Use Node.js 24 and pnpm 12.16.1. The lockfile pins frontend/backend dependencies.
+Use Node.js 26 and pnpm 12.18.0. The lockfile pins frontend/backend dependencies.
 For development, use disposable paths rather than your actual agent home:
 
 ```sh

@@ -1,12 +1,12 @@
-FROM node:24-bookworm-slim AS build
+FROM node:26-bookworm-slim AS build
 WORKDIR /app
-RUN npm install --global pnpm@12.16.1
+RUN npm install --global pnpm@12.18.0
 COPY dashboard/package.json dashboard/pnpm-lock.yaml dashboard/pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY dashboard/ ./
 RUN pnpm test && pnpm build
 
-FROM node:24-bookworm-slim
+FROM node:26-bookworm-slim
 ENV NODE_ENV=production PORT=3780
 WORKDIR /app
 COPY --from=build /app/dist ./dist
