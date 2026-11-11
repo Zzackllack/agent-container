@@ -1,15 +1,19 @@
 # /// script
 # dependencies = ["websockets>=15,<16"]
 # ///
-"""Exercise the in-app update RPC and persistent runtime on a disposable volume.
+"""Exercise T3's persistent runtime on a disposable volume.
 
 Run with: uv run tests/t3-update.py agent-container:check
-Downloads the preceding nightly; never uses real provider credentials.
+Downloads the preceding nightly; never uses real provider credentials. Updates
+in place when both runtimes share a launcher protocol, and verifies the local
+selection a protocol bump requires otherwise. Set T3_UPDATE_FROM to an exact
+older release to exercise a particular transition.
 """
 
 import asyncio
 import http.cookiejar
 import json
+import os
 import re
 import subprocess
 import sys
@@ -20,9 +24,43 @@ from typing import Any
 
 import websockets
 
+STATE_PATH = "/home/agent/.t3/runtime/service-state.json"
+
+# Upstream exposes the launcher protocol only by rejecting every other value.
+PROTOCOL = r"""
+set -eu
+runtime=$1
+"$runtime/t3" __service-preflight --database-path "$runtime/.protocol-probe.sqlite" \
+    --launcher-protocol 4 |
+    jq -er 'if .status == "ready" then "4"
+        else (.reason | capture("requires protocol (?<protocol>[0-9]+)").protocol) end'
+"""
+
 
 def docker(*args: str) -> str:
     return subprocess.check_output(["docker", *args], text=True).strip()
+
+
+def protocol_of(image: str, entry: str) -> int:
+    return int(
+        docker("run", "--rm", image, "sh", "-ec", PROTOCOL, "probe", entry)
+    )
+
+
+def start(name: str, image: str, mount: str) -> str:
+    docker(
+        "run",
+        "-d",
+        "--init",
+        "--name",
+        name,
+        "--mount",
+        mount,
+        "-p",
+        "127.0.0.1::3773",
+        image,
+    )
+    return "http://127.0.0.1:" + docker("port", name, "3773").rsplit(":", 1)[1]
 
 
 def wait_for_server(base: str, version: str) -> dict[str, Any]:
@@ -105,7 +143,13 @@ destination=$T3CODE_HOME/runtime/versions/$old
 mkdir -p "$destination"
 tar -xzf "$stage/$package" -C "$destination" --strip-components=1
 printf '%s\n' "$old" > "$destination/.install-complete"
-jq -n --arg old "$old" '{protocol:3,activeVersion:$old}' > "$T3CODE_HOME/runtime/service-state.json"
+protocol=$("$destination/t3" __service-preflight --database-path "$destination/.protocol-probe.sqlite" \
+    --launcher-protocol 4 |
+    jq -er 'if .status == "ready" then "4"
+        else (.reason | capture("requires protocol (?<protocol>[0-9]+)").protocol) end')
+jq -n --argjson protocol "$protocol" --arg old "$old" \
+    '{protocol:$protocol,activeVersion:$old}' > "$T3CODE_HOME/runtime/service-state.json"
+printf 'PROTOCOL=%s\n' "$protocol"
 """
 
 
@@ -120,12 +164,15 @@ def main() -> None:
             for release in json.load(response)
             if re.fullmatch(r"v\d+\.\d+\.\d+-nightly\.\d+\.\d+", release["tag_name"])
         ]
-    previous = nightlies[nightlies.index(target) + 1]
+    previous = os.environ.get("T3_UPDATE_FROM") or nightlies[
+        nightlies.index(target) + 1
+    ]
+    target_protocol = protocol_of(image, "/opt/t3")
     name = "agent-t3-update-" + uuid.uuid4().hex[:10]
     volume = name + "-home"
     mount = f"type=volume,source={volume},target=/home/agent"
     try:
-        docker(
+        prepared = docker(
             "run",
             "--rm",
             "--init",
@@ -138,53 +185,57 @@ def main() -> None:
             "fixture",
             previous,
         )
-        docker(
-            "run",
-            "-d",
-            "--init",
-            "--name",
-            name,
-            "--mount",
-            mount,
-            "-p",
-            "127.0.0.1::3773",
-            image,
-        )
-        port = docker("port", name, "3773").rsplit(":", 1)[1]
-        base = "http://127.0.0.1:" + port
+        previous_protocol = int(re.search(r"PROTOCOL=(\d+)", prepared).group(1))
+        base = start(name, image, mount)
         wait_for_server(base, previous)
-        asyncio.run(update(base, name, target))
-        wait_for_server(base, target)
-        state_path = "/home/agent/.t3/runtime/service-state.json"
-        committed = json.loads(docker("exec", name, "cat", state_path))
-        assert committed["update"]["status"] == "committed"
+
+        if previous_protocol == target_protocol:
+            asyncio.run(update(base, name, target))
+            wait_for_server(base, target)
+            expected = json.loads(docker("exec", name, "cat", STATE_PATH))
+            assert expected["update"]["status"] == "committed"
+            summary = f"in-app update {previous} -> {target}"
+        else:
+            # The running launcher validates the staged runtime with its own
+            # protocol and refuses before committing; this is the user's toast.
+            blocked = json.loads(
+                docker(
+                    "exec",
+                    name,
+                    "sh",
+                    "-ec",
+                    "/opt/t3/t3 __service-preflight "
+                    "--database-path /home/agent/.t3/userdata/statev2.sqlite "
+                    f"--launcher-protocol {previous_protocol}",
+                )
+            )
+            assert blocked["status"] == "blocked", blocked
+            assert (
+                f"requires protocol {target_protocol}" in blocked["reason"]
+            ), blocked
+            unchanged = json.loads(docker("exec", name, "cat", STATE_PATH))
+            assert unchanged["activeVersion"] == previous, unchanged
+            assert "update" not in unchanged, unchanged
+            docker("exec", name, "t3-runtime-select", "seed")
+            expected = {"protocol": target_protocol, "activeVersion": target}
+            assert json.loads(docker("exec", name, "cat", STATE_PATH)) == expected
+            summary = (
+                f"launcher protocol {previous_protocol} -> {target_protocol} "
+                f"local selection {previous} -> {target}"
+            )
+
         docker("restart", "-t", "20", name)
-        port = docker("port", name, "3773").rsplit(":", 1)[1]
-        base = "http://127.0.0.1:" + port
+        base = "http://127.0.0.1:" + docker("port", name, "3773").rsplit(":", 1)[1]
         wait_for_server(base, target)
-        assert json.loads(docker("exec", name, "cat", state_path)) == committed
+        assert json.loads(docker("exec", name, "cat", STATE_PATH)) == expected
         docker("stop", "-t", "20", name)
         docker("rm", name)
         # A new container has no writable-layer files from the preceding one.
-        docker(
-            "run",
-            "-d",
-            "--init",
-            "--name",
-            name,
-            "--mount",
-            mount,
-            "-p",
-            "127.0.0.1::3773",
-            image,
-        )
-        port = docker("port", name, "3773").rsplit(":", 1)[1]
-        wait_for_server("http://127.0.0.1:" + port, target)
-        assert json.loads(docker("exec", name, "cat", state_path)) == committed
+        base = start(name, image, mount)
+        wait_for_server(base, target)
+        assert json.loads(docker("exec", name, "cat", STATE_PATH)) == expected
         assert docker("exec", name, "t3", "--version") == "t3 v" + target
-        print(
-            f"T3 update {previous} -> {target}, restart, and recreation checks passed."
-        )
+        print(f"T3 {summary}, restart, and recreation checks passed.")
     finally:
         subprocess.run(["docker", "rm", "-f", name], capture_output=True, check=False)
         subprocess.run(
