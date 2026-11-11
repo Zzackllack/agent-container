@@ -17,6 +17,8 @@
 !scripts/agent-cli.sh
 !scripts/context7-setup.sh
 !scripts/t3-runtime.sh
+!scripts/t3-runtime-select.sh
+!scripts/t3-protocol.sh
 !scripts/t3-pair.sh
 !scripts/workspace-entrypoint.sh
 !scripts/workspace-healthcheck.sh

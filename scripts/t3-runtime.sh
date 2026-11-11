@@ -1,6 +1,9 @@
 #!/bin/sh
 set -eu
 
+# shellcheck source=scripts/t3-protocol.sh
+. /usr/local/lib/agent-container/t3-protocol
+
 export T3CODE_HOME="${T3CODE_HOME:-$HOME/.t3}"
 runtime="$T3CODE_HOME/runtime"
 state="$runtime/service-state.json"
@@ -22,9 +25,14 @@ mkdir -p "$runtime/versions"
         fi
         test "$(cat "$target/.install-complete")" = "$version"
         pending=$(mktemp "$runtime/.service-state.XXXXXX")
-        # Protocol 3 is the upstream standalone-runtime layout. Its launcher
-        # validates the complete state and handles migrations/update rollback.
-        jq -n --arg version "$version" '{protocol: 3, activeVersion: $version}' > "$pending"
+        # The seed and this wrapper ship in the same image, so ask the seed
+        # which launcher protocol it speaks instead of pinning the number here.
+        protocol=$(t3_runtime_protocol "$target/t3" "$runtime/.bootstrap-preflight.sqlite") || {
+            echo "Could not determine the launcher protocol of the T3 seed $version." >&2
+            exit 1
+        }
+        jq -n --argjson protocol "$protocol" --arg version "$version" \
+            '{protocol: $protocol, activeVersion: $version}' > "$pending"
         mv "$pending" "$state"
     fi
 ) 9> "$runtime/.workspace-bootstrap.lock"

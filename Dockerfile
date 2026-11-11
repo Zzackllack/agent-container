@@ -155,7 +155,9 @@ RUN rm /usr/local/bin/codex /usr/local/bin/opencode \
 COPY --chmod=0755 scripts/context7-setup.sh /usr/local/bin/context7-setup
 # Convenience wrapper around cloudflared for quick tunnels.
 COPY --chmod=0755 scripts/tunnel.sh /usr/local/bin/tunnel
+COPY --chmod=0755 scripts/t3-protocol.sh /usr/local/lib/agent-container/t3-protocol
 COPY --chmod=0755 scripts/t3-runtime.sh /usr/local/lib/agent-container/t3-runtime
+COPY --chmod=0755 scripts/t3-runtime-select.sh /usr/local/bin/t3-runtime-select
 RUN ln -s /usr/local/lib/agent-container/t3-runtime /usr/local/bin/t3 \
     && ln -s /usr/local/lib/agent-container/t3-runtime /usr/local/bin/workspace-t3
 
