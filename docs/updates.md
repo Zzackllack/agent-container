@@ -30,9 +30,11 @@ new runtimes, and manages database migration/rollback. It stays alive while the
 server version changes. Docker handles container restarts; no systemd service is
 installed inside the container.
 
-This integrates T3's internal launcher interface, currently protocol 3. A future
-nightly can change it; the real update test checks this integration. See the
-[upstream launcher](https://github.com/pingdotgg/t3code/blob/main/apps/server/src/serviceLauncher.ts)
+This integrates T3's internal launcher interface, currently protocol 4. The
+wrapper asks a runtime for its protocol through the upstream preflight instead
+of pinning the number, so a newer seed still bootstraps. A future nightly can
+change the interface again; the real update test checks this integration. See
+the [upstream launcher](https://github.com/pingdotgg/t3code/blob/main/apps/server/src/serviceLauncher.ts)
 and [upstream update implementation](https://github.com/pingdotgg/t3code/blob/main/apps/server/src/cloud/selfUpdate.ts).
 
 ## Update from T3
@@ -61,6 +63,36 @@ from `/opt/t3/.install-complete`, which records the image seed.
 Do not use `t3 service install` or `t3 service update` in this container: those
 manage host boot services. Use the in-app updater to activate T3 releases; the
 plain `t3 update` command does not manage this Compose-owned launcher.
+
+## Launcher protocol upgrades
+
+Some nightlies raise the service-launcher protocol. An in-app update cannot
+cross that boundary: the running launcher validates the staged runtime with its
+own protocol and fails before committing anything. The client shows:
+
+> The installed service launcher speaks protocol 3, but t3@0.1.10-nightly.20261111.4544 requires protocol 4.
+
+This is not transient; retrying fails the same way. The rest of that message
+describes a host install with systemd and `~/.local/bin/t3`. This container has
+neither, so do not run `t3 service install` here.
+
+The failed attempt usually leaves the new runtime under
+`$T3CODE_HOME/runtime/versions/<version>`, though upstream prunes unused
+downloads after an hour; a rebuilt image always carries the seed in `/opt/t3`.
+The database and `service-state.json` stay on the old version. Select the
+downloaded runtime or the image seed locally, then restart:
+
+```sh
+docker compose exec --user agent workspace t3-runtime-select seed
+docker compose restart workspace
+docker compose exec --user agent workspace t3 --version
+```
+
+`t3-runtime-select` also accepts an exact installed version instead of `seed`.
+It refuses a pending update or an older selection (unless `--allow-downgrade`
+is passed), copies the seed when needed, and uses the upstream preflight to
+reject a runtime whose database is incompatible. In-app updates work again
+once the new launcher is running.
 
 Keep the complete home volume in backups. Removing `agent-home` deletes both
 the installation and its data; `docker compose down -v` does that. If an update
@@ -91,9 +123,11 @@ uv run tests/t3-update.py agent-container:check
 
 It downloads the preceding nightly into a disposable home, starts the upstream
 launcher, pairs a temporary client, and calls the same `server.updateServer` RPC
-used by the application. It verifies committed activation, container restart,
-and full recreation with the same home volume. It removes its own containers
-and volume and does not use provider credentials.
+used by the application. When the two releases straddle a launcher protocol bump
+it instead verifies the refusal, selects the image seed locally, and continues.
+Both paths check activation, container restart, and full recreation with the
+same home volume. It removes its own containers and volume and does not use
+provider credentials.
 
 The Context7 tests exercise v2's global config editor and a live OpenCode server
 with fake keys, waiting for asynchronous configuration plugin activation.

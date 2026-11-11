@@ -32,7 +32,9 @@ runtime responsibilities. Read the relevant guide before changing one:
   exception: keep complete writable installations and upstream service state in
   `$T3CODE_HOME/runtime`; never overwrite them on restart or image rebuild.
 - Run T3's bundled `__service-launcher` in the foreground, without systemd. Its
-  protocol is currently 3. Use the real update test to detect upstream changes;
+  protocol is currently 4; `scripts/t3-protocol.sh` asks a runtime instead of
+  hardcoding the number, and `t3-runtime-select` performs the local selection a
+  protocol bump requires. Use the real update test to detect upstream changes;
   do not fake update capabilities or replace the upstream update protocol.
 - GitHub CLI archives are pinned in `versions/gh.env`. Keep Context7 setup on the
   hosted HTTP transport; use the existing native config editors rather than
