@@ -24,6 +24,9 @@
 !scripts/workspace-healthcheck.sh
 !config/
 !config/docker-daemon.json
+!config/openhands/
+!config/openhands/package.json
+!config/openhands/package-lock.json
 !versions/
 !versions/codex.env
 !versions/opencode.env
