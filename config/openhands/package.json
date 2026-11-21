@@ -1,0 +1,7 @@
+{
+  "name": "agent-container-canvas",
+  "private": true,
+  "dependencies": {
+    "@openhands/agent-canvas": "1.42.0"
+  }
+}
