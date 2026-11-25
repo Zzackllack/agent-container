@@ -77,7 +77,9 @@ jobs:
           platforms: linux/${{ matrix.arch }}
           load: true
           tags: ${{ matrix.image }}:test
-          build-args: T3_REFRESH=${{ github.run_id }}-${{ github.run_attempt }}
+          # Keyed by run, not attempt: a partial rerun must reuse the same T3
+          # nightly as the architectures that already passed.
+          build-args: T3_REFRESH=${{ github.run_id }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
@@ -118,7 +120,9 @@ jobs:
           ARCH: ${{ matrix.arch }}
         run: |
           image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/$IMAGE_NAME"
-          tag="build-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$ARCH"
+          # The attempt stays out of intermediate tags: rerunning only the
+          # failed job must find the images the other jobs already pushed.
+          tag="build-$GITHUB_RUN_ID-$ARCH"
           docker tag "$IMAGE_NAME:test" "$image:$tag"
           docker push "$image:$tag"
 
@@ -148,5 +152,5 @@ jobs:
           tag="build-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
           docker buildx imagetools create \
             --tag "$image:$tag" --tag "$image:latest" \
-            "$image:$tag-amd64" "$image:$tag-arm64"
+            "$image:build-$GITHUB_RUN_ID-amd64" "$image:build-$GITHUB_RUN_ID-arm64"
           docker buildx imagetools inspect "$image:$tag"
