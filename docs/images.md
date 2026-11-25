@@ -41,8 +41,9 @@ Set access bindings as described in [remote access](remote-access.md) and the
 
 - `latest`: most recent successful publishing run from `main`.
 - `build-<run-id>-<attempt>`: a particular tested build of both architectures.
-- The same build tag with `-amd64` or `-arm64` is an intermediate single-platform
-  image used to assemble the manifest.
+- `build-<run-id>-amd64` and `build-<run-id>-arm64` are intermediate
+  single-platform images used to assemble the manifest. They are keyed by run
+  rather than attempt so rerunning only a failed job reuses the other platform.
 
 The workflow runs for image-related changes on `main` and on manual dispatch.
 Pull requests run the native builds and checks without publishing. A new
