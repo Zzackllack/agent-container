@@ -5,7 +5,7 @@ and arm64 runners, then publishes multi-platform manifests to GHCR:
 
 | Image | Purpose |
 | --- | --- |
-| `ghcr.io/zzackllack/agent-container:latest` | Debian workspace with T3, coding agents, OpenHands, and optional inner Docker |
+| `ghcr.io/zzackllack/agent-container:latest` | Debian workspace with T3, coding agents, and optional inner Docker |
 | `ghcr.io/zzackllack/agent-container-dashboard:latest` | Configuration dashboard |
 
 ## Run without building
@@ -37,38 +37,6 @@ build definitions; the base source-build setup remains available without it.
 Set access bindings as described in [remote access](remote-access.md) and the
 [dashboard guide](dashboard.md). Manage agent instructions through the [dashboard](dashboard.md).
 
-## OpenHands backend
-
-Use [compose.openhands.yaml](../compose.openhands.yaml) on a Linux host with
-[`sysbox-runc`](sysbox.md). It uses the standard workspace image with a command
-that starts the Agent Server and Automation Server. The usual workspace starts
-T3. The review project has its own home, workspace, and inner Docker daemon.
-
-Set `OPENHANDS_BACKEND_API_KEY` to a random key, and set
-`OPENHANDS_FRONTEND_ORIGIN` to the Canvas browser origin, such as
-`https://canvas.example.com` without a path. The backend publishes on
-`127.0.0.1:8101` by default. Set `OPENHANDS_BACKEND_BIND_IP` to the private
-interface address for direct access, or use a reverse proxy to port `8000`.
-
-```sh
-docker compose -f compose.openhands.yaml up -d
-```
-
-To use a local build, run `docker build -t agent-container:local .` and set
-`WORKSPACE_IMAGE=agent-container:local` for the review Compose. Set
-`OPENHANDS_IMAGE` only if the review service needs a different tag. The first
-backend launch downloads the pinned Python services with `uvx` and caches them
-in the review home. In Canvas, use **Manage Backends** to enter the backend URL
-and API key. [OpenHands remote backend guide](https://docs.openhands.dev/openhands/usage/agent-canvas/backend-setup/remote)
-
-For terminal `gh` commands, set `OPENHANDS_GH_TOKEN` to a dedicated token or run
-`docker compose -f compose.openhands.yaml exec --user agent backend gh auth login`
-with a bot account. The backend's GitHub CLI config lives in its review home.
-GitHub App installation tokens expire after one hour. Unattended reviews as
-the App need fresh tokens wired into their GitHub calls. The stock Canvas PR
-review recipe asks for its own GitHub MCP credential.
-[OpenHands PR review recipe](https://docs.openhands.dev/openhands/usage/agent-canvas/prebuilt/github-pr-review)
-
 ## Tags and updates
 
 - `latest`: most recent successful publishing run from `main`.
@@ -76,11 +44,11 @@ review recipe asks for its own GitHub MCP credential.
 - The same build tag with `-amd64` or `-arm64` is an intermediate single-platform
   image used to assemble the manifest.
 
-The workflow runs for image-related changes on `main`, on manual dispatch, and
-daily at 04:15 UTC to refresh the floating T3 nightly seed. Pull requests run
-the native builds and checks without publishing. A new manifest is promoted
-only after all image and architecture jobs pass. Actions are SHA-pinned; pushes
-use the repository's `GITHUB_TOKEN`, not a stored personal token.
+The workflow runs for image-related changes on `main` and on manual dispatch.
+Pull requests run the native builds and checks without publishing. A new
+manifest is promoted only after all image and architecture jobs pass. Actions
+are SHA-pinned; pushes use the repository's `GITHUB_TOKEN`, not a stored
+personal token.
 
 To select a particular build, set both overrides in `.env`:
 
@@ -104,7 +72,7 @@ access. If a fork's package remains private, its owner can change that in packag
 settings. Subsequent pushes retain visibility. Forks publish under their own
 lowercased owner namespace; their Compose overrides need to point there.
 
-CI verifies the workspace tools, mock-daemon lifecycle, Git instruction sync,
-Context7 configuration with fake credentials, and dashboard recreation. These
-checks do not prove live Sysbox nesting or authenticated provider tasks; those
-remain [server-side checks](sysbox.md#verify-on-the-host).
+CI verifies the workspace tools, mock-daemon lifecycle, dashboard-managed
+instruction files, Context7 configuration with fake credentials, and dashboard
+recreation. These checks do not prove live Sysbox nesting or authenticated
+provider tasks; those remain [server-side checks](sysbox.md#verify-on-the-host).

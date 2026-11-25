@@ -26,9 +26,6 @@ on:
       - versions/**
       - config/**
   workflow_dispatch:
-  schedule:
-    # Refresh the floating T3 nightly seed; existing homes retain their runtime.
-    - cron: '15 4 * * *'
 
 permissions:
   contents: read
@@ -72,7 +69,6 @@ jobs:
           docker compose -f compose.yaml -f compose.browser.yaml config --quiet
           docker compose -f compose.yaml -f compose.sysbox.yaml -f compose.browser.yaml config --quiet
           docker compose -f compose.yaml -f compose.sysbox.yaml -f compose.browser-unsandboxed.yaml config --quiet
-          OPENHANDS_BACKEND_API_KEY=compose-validation docker compose -f compose.openhands.yaml config --quiet
       - name: Build native image for testing
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
@@ -108,9 +104,6 @@ jobs:
         if: matrix.image == 'agent-container-dashboard'
         # This host-side test uses only Python's standard library and Docker.
         run: python3 tests/dashboard.py agent-container-dashboard:test
-      - name: Verify OpenHands backend
-        if: matrix.image == 'agent-container'
-        run: bash tests/openhands.sh agent-container:test
       - name: Sign in to GHCR
         if: github.event_name != 'pull_request'
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0

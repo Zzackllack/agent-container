@@ -193,14 +193,8 @@ ENV HOME=/home/agent \
     JAVA_HOME=/opt/java \
     PATH=/opt/java/bin:/opt/maven/bin:/opt/node/bin:/usr/local/go/bin:/opt/cargo/bin:$PATH
 
-COPY config/openhands/package.json config/openhands/package-lock.json /opt/openhands/
-RUN --mount=type=cache,target=/root/.npm \
-    npm ci --prefix /opt/openhands --omit=dev --no-audit --no-fund \
-    && ln -s /opt/openhands/node_modules/.bin/agent-canvas /usr/local/bin/agent-canvas
-
 USER agent
 WORKDIR /workspace
-RUN agent-canvas --version
-EXPOSE 3773 8000
+EXPOSE 3773
 ENTRYPOINT ["workspace-entrypoint"]
 CMD ["workspace-t3"]
